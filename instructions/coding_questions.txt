@@ -1,0 +1,10 @@
+Write a program to reverse a string.
+Implement a function to check whether a given string is a palindrome.
+Write a function to check whether a given number is prime.
+Implement a sorting algorithm, such as bubble sort or quicksort.
+Write a program to find the Fibonacci sequence up to a given number.
+Implement a binary search algorithm for a sorted array.
+Write a program to find the factorial of a given number.
+Implement a function to find the largest and smallest numbers in a given array.
+Write a program to check whether two given strings are anagrams.
+Implement a function to check whether a given number is even or odd.

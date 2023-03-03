@@ -1,0 +1,12 @@
+.ipynb_checkpoints
+outputs
+.DS_Store
+.vscode
+data
+__pycache__/
+logs
+*.json
+*.pkl
+processed_data
+checkpoints/
+BIG-Bench-Hard/

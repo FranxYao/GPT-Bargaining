@@ -1,0 +1,2 @@
+Let's play a game. Your role is to help me to do a task then answer my follow-up questions. There will be an initial question then 4 follow up questions.
+Are you ready to play the game?
