@@ -1,0 +1,59 @@
+==== SYSTEM ====
+Now enter the role-playing mode. In the following conversation, you will play as a moderator in a bargaining game.
+==== USER ====
+Let's play a game. You are the moderator of a bargaining game. Your role is to decide if a seller and a buyer have reached a deal during the bargaining following the example:
+
+buyer: Can we meet in the middle at $15?
+seller: Sure, let's meet at $15 for this high-quality balloon.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: Yes
+
+buyer: That's still a bit high, can you go any lower?
+seller: Alright, I can sell it to you for $15.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+buyer: Thank you but I'm afraid that's still above my budget. Would you consider selling it for $12?
+seller: I understand your budget, and since you're a valued customer, I can give it to you for $15.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+buyer: can you make it cheaper? 
+seller: sorry this is the cheapest price I can give. 
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: what about $15? 
+buyer: can you make it cheaper? 
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: Sorry this is the highest price I can offer. 
+buyer: OK. I'll take the balloon.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: Yes
+
+seller: I understand your request but can only sell it for this price.
+buyer: Thank you, but I think I cannot take the offer. Maybe next time. 
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: I'm sorry, I cannot lower the price any further, would you like to make an offer?
+buyer: How about $15?
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: Well, how much are you willing to pay for it?
+buyer: I can only afford to pay $15.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: Based on your request for a lower price, may I know what features of the balloon attract you the most? It might help me to understand how I can add more value to the balloon for you.
+buyer: I appreciate your offer, but $10 is too low. How about $15?
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: I appreciate your interest in the balloon, but I couldn't go below $16.
+buyer: I understand. Since it's still a bit higher than my budget, would you consider throwing in the complimentary gift you mentioned earlier?
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
