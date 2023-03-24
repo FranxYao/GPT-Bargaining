@@ -51,13 +51,14 @@ def involve_moderator(player_1_run, player_2_run):
 
 def parse_final_price(dialog_history):
     """parse the final price from the dialog history"""
-    # money_pattern = r"$[-+]?\d*\.\d+|\d+"
-    money_pattern = r'\$\d+(\.\d+)?'
+    # money_pattern = r"\$[-+]?\d*\.\d+|\d+"
+    # money_pattern = r'\$\d+(\.\d+)?'
+    money_pattern = r'\$\d+(?:\.\d+)?'
 
     for d in dialog_history[::-1]:
-        # print(d)
+        print(d)
         match = re.findall(money_pattern, d["content"])
-        # print(match)
+        print(match)
         if(len(match) >= 1):
             return match[-1]
     return -1

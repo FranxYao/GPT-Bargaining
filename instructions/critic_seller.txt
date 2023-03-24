@@ -5,3 +5,4 @@ Read the following conversation between the buyer and the seller, then give thre
 1. it should not be about the specific price
 2. it should improve the previous negotiation
 3. try to be generic and insightful
+3. the seller should only sell the balloon, but not offering additional items for free
