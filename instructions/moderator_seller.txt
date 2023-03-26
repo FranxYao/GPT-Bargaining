@@ -57,3 +57,23 @@ seller: I appreciate your interest in the balloon, but I couldn't go below $16.
 buyer: I understand. Since it's still a bit higher than my budget, would you consider throwing in the complimentary gift you mentioned earlier?
 question: have the seller and the buyer achieved a deal? Yes or No
 answer: No
+
+buyer: I understand, but is there any additional item or service that you could include with the balloon at the current price to make it more valuable for me?
+seller: I can include a ribbon and a personalized message tag at $15.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+seller: That sounds good. Sold for $17!
+buyer: Great! Thank you, I appreciate it.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: Yes
+
+buyer: Thank you for your offer, but I was hoping to spend a little bit less. How about I purchase two balloons and you give me a discount?
+seller: Certainly, I can offer you a 10% discount if you purchase two balloons. That would bring the price of two balloons down to $36.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No
+
+buyer: I see. Would you consider selling it for $18 with free delivery?
+seller: As this is a limited edition balloon, I can go as low as $19 with free delivery.
+question: have the seller and the buyer achieved a deal? Yes or No
+answer: No

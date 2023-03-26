@@ -56,18 +56,18 @@ def parse_final_price(dialog_history):
     money_pattern = r'\$\d+(?:\.\d+)?'
 
     for d in dialog_history[::-1]:
-        print(d)
         match = re.findall(money_pattern, d["content"])
-        print(match)
         if(len(match) >= 1):
-            return match[-1]
+            final_price = match[-1]
+            if(final_price[0] == "$"): final_price = float(final_price[1:])
+            else: final_price = float(final_price)
+            return final_price
     return -1
 
 class GPTAgent(object):
     """GPT Agent base class, later derived to be a seller, buyer, critic, or moderator
 
     TODO: add code to detect price inconsistency to seller and buyer
-    TODO: modify the moderator to support the CONTINUE state
     TODO: release the restriction of the fixed initial price 
     """
     def __init__(self, 
@@ -138,18 +138,7 @@ class BuyerAgent(GPTAgent):
         super().__init__(initial_dialog_history, agent_type, engine)
         return
     
-
-class SellerAgent(GPTAgent):
-    
-    def __init__(self, 
-                 initial_dialog_history=None,
-                 agent_type="seller",
-                 engine="gpt-3.5-turbo"
-                ):
-        super().__init__(initial_dialog_history, agent_type, engine)
-        return
-    
-    def receive_feedback(self, feedback):
+    def receive_feedback(self, feedback, previous_price):
         """Receive and acknowledge feedback from the critic"""
 
         # if the previous round is ended by the buyer, then add seller's acknowledgement
@@ -161,14 +150,61 @@ class SellerAgent(GPTAgent):
         feedback_prefix += "Here is the feedback from the critic:\n\n"
         feedback = feedback_prefix + feedback + "\n\n"
         feedback += "Now let's start the next round. "
-        feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic."
-        feedback += "Your goal is to sell the balloon at at higher price than the previous round."
+        feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
+        feedback += "But you are **not allowed** to ask for additionl service. "
+        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s." % str(previous_price)
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
         acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
-        acknowledgement += "And I will try to sell it at a higher price than the previous round."
+        # acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
+        acknowledgement += " And I will try to buy it at a lower price than the previous round."
+        prompt = {"role": "assistant", "content": acknowledgement}
+        self.dialog_history.append(prompt)
+
+        # restart the bargaining 
+        prompt = {"role": "user", "content": "Now ask your price again."}
+        self.dialog_history.append(prompt)
+        prompt = {"role": "assistant", "content": "Hi, how much is the balloon?"}
+        self.dialog_history.append(prompt)
+        prompt = {"role": "user", "content": "Hi, this is a good baloon and its price is $20"}
+        self.dialog_history.append(prompt)
+        prompt = {"role": "assistant", "content": "Would you consider selling it for $10?"}
+        self.dialog_history.append(prompt)
+        return acknowledgement
+    
+
+class SellerAgent(GPTAgent):
+    
+    def __init__(self, 
+                 initial_dialog_history=None,
+                 agent_type="seller",
+                 engine="gpt-3.5-turbo"
+                ):
+        super().__init__(initial_dialog_history, agent_type, engine)
+        return
+    
+    def receive_feedback(self, feedback, previous_price):
+        """Receive and acknowledge feedback from the critic"""
+
+        # if the previous round is ended by the buyer, then add seller's acknowledgement
+        if(self.dialog_history[-1]["role"] == "user"):
+            self.dialog_history.append({"role": "assitent", "content": "Sure, happy to do business with you."})
+        
+        # add the feedback from the critic
+        feedback_prefix = "Well done in your last round. "
+        feedback_prefix += "Here is the feedback from the critic:\n\n"
+        feedback = feedback_prefix + feedback + "\n\n"
+        feedback += "Now let's start the next round. "
+        feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
+        feedback += "Your goal is to sell the balloon at at higher price than the previous round, i.e., higher than $%s." % str(previous_price)
+        prompt = {"role": "user", "content": feedback}
+        self.dialog_history.append(prompt)
+
+        # add the seller's acknowledgement
+        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
+        acknowledgement += " And I will try to sell it at a higher price (higher than $%s) than the previous round." % str(previous_price)
         prompt = {"role": "assistant", "content": acknowledgement}
         self.dialog_history.append(prompt)
 
@@ -177,7 +213,7 @@ class SellerAgent(GPTAgent):
         self.dialog_history.append(prompt)
         prompt = {"role": "assistant", "content": "Hi, this is a good baloon and its price is $20"}
         self.dialog_history.append(prompt)
-        return
+        return acknowledgement
 
 class ModeratorAgent(GPTAgent):
     """NOTE: initial experiments shows that the moderator is much better at recognizing deal than not deal
@@ -254,7 +290,8 @@ class SellerCriticAgent(GPTAgent):
                         model=self.engine,
                         messages=messages
                         )
-        feedback = response['choices'][0]['message']['content']
+        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        feedback = "  " + feedback
         return feedback
     
 class BuyerCriticAgent(GPTAgent):
@@ -267,5 +304,27 @@ class BuyerCriticAgent(GPTAgent):
         super().__init__(initial_dialog_history, agent_type, engine)
         return
     
-    def criticize(self, buyer_history):
-        return 
+    def criticize(self, buyer_history, retry=True):
+        prompt = "\n"
+        for d in buyer_history[1:]:
+            if(d["role"] == "user"):
+                prompt += "seller: %s\n" % d["content"]
+            elif(d["role"] == "assistant"):
+                prompt += "buyer: %s\n" % d["content"]
+        prompt += "\n\nNow give three suggestions to improve the buyer's negotiation strategy: "
+
+        messages = deepcopy(self.dialog_history)
+        messages[-1]['content'] += "\n\n" + prompt
+
+        if(retry):
+            response = completion_with_backoff(
+                          model=self.engine,
+                          messages=messages
+                        )
+        else:
+            response = openai.ChatCompletion.create(
+                        model=self.engine,
+                        messages=messages
+                        )
+        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        return feedback

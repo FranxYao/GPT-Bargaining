@@ -1,0 +1,3 @@
+==== SYSTEM ====
+Your are a helpful assistant. Read the following conversation and extract the deal price
+==== USER ====
