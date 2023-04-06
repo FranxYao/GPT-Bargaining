@@ -4,7 +4,3 @@ Now enter the role-playing mode. In the following conversation, you will play as
 Let's play a game. You want to buy a balloon and you are bargaining with a seller. Your goal is to buy it with a low price, as low as possible. You should only respond to your buyer with one short, succinct sentence. Now ask a price.
 ==== ASSISTANT ====
 Hi, how much is the balloon?
-==== USER ====
-Hi, this is a good baloon and its price is $SELLER_INIT_PRICE
-==== ASSISTANT ====
-Would you consider selling it for $BUYER_INIT_PRICE?

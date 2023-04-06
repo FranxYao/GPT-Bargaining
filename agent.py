@@ -64,7 +64,7 @@ def parse_final_price(dialog_history):
             return final_price
     return -1
 
-class GPTAgent(object):
+class DialogAgent(object):
     """GPT Agent base class, later derived to be a seller, buyer, critic, or moderator
 
     TODO: add code to detect price inconsistency to seller and buyer
@@ -72,10 +72,11 @@ class GPTAgent(object):
     """
     def __init__(self, 
                  initial_dialog_history=None,
-                 agent_type="", # "seller", "buyer", "coach", "moderator"
+                 agent_type="", # "seller", "buyer", "critic", "moderator"
                  system_instruction="You are a helpful AI assistant", 
                  engine="gpt-3.5-turbo"
                 ):
+        """Initialize the agent"""
         super().__init__()
         
         self.agent_type = agent_type
@@ -87,19 +88,17 @@ class GPTAgent(object):
             self.initial_dialog_history = deepcopy(initial_dialog_history)
             self.dialog_history = deepcopy(initial_dialog_history)
 
-        # self.history_len = 0
-        # self.dialog_round = 0
         self.last_prompt = ""
         return 
     
     def reset(self):
         """Reset dialog history"""
         self.dialog_history = deepcopy(self.initial_dialog_history)
-        # self.history_len = 0
-        self.last_prompt = ""
-        return
+        return 
+        
     
     def call(self, prompt, retry=True):
+        """Call the agent with a prompt"""
         prompt = {"role": "user", "content": prompt}
         self.dialog_history.append(prompt)
         self.last_prompt = prompt['content']
@@ -127,15 +126,48 @@ class GPTAgent(object):
     def last_response(self):
         return self.dialog_history[-1]['content']
     
+    @property
+    def history(self):
+        for h in self.dialog_history:
+            print('%s:  %s' % (h["role"], h["content"]))
+        return 
+    
 
-class BuyerAgent(GPTAgent):
+class BuyerAgent(DialogAgent):
 
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="buyer",
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 buyer_instruction="buyer",
+                 buyer_init_price=10,
+                 seller_init_price=20,
                 ):
-        super().__init__(initial_dialog_history, agent_type, engine)
+        """Initialize the buyer agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+        self.buyer_instruction = buyer_instruction
+        self.buyer_init_price = buyer_init_price
+        self.seller_init_price = seller_init_price
+
+        print("Initializing buyer with engine %s" % self.engine)
+
+        for i, d in enumerate(self.dialog_history):
+            self.dialog_history[i]["content"] = d["content"].replace(
+                "BUYER_INIT_PRICE", str(buyer_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace(
+                "SELLER_INIT_PRICE", str(seller_init_price))
+        return
+    
+    def reset(self):
+        """Reset dialog history"""
+        self.dialog_history = deepcopy(self.initial_dialog_history)
+
+        for i, d in enumerate(self.dialog_history):
+            self.dialog_history[i]["content"] = d["content"].replace(
+                "BUYER_INIT_PRICE", str(self.buyer_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace(
+                "SELLER_INIT_PRICE", str(self.seller_init_price))
         return
     
     def receive_feedback(self, feedback, previous_price):
@@ -158,8 +190,8 @@ class BuyerAgent(GPTAgent):
 
         # add the seller's acknowledgement
         acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
-        # acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
-        acknowledgement += " And I will try to buy it at a lower price than the previous round."
+        acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
+        # acknowledgement += " And I will try to buy it at a lower price than the previous round."
         prompt = {"role": "assistant", "content": acknowledgement}
         self.dialog_history.append(prompt)
 
@@ -168,21 +200,47 @@ class BuyerAgent(GPTAgent):
         self.dialog_history.append(prompt)
         prompt = {"role": "assistant", "content": "Hi, how much is the balloon?"}
         self.dialog_history.append(prompt)
-        prompt = {"role": "user", "content": "Hi, this is a good baloon and its price is $20"}
+        prompt = {"role": "user", "content": "Hi, this is a good baloon and its price is $%d" % self.seller_init_price}
         self.dialog_history.append(prompt)
-        prompt = {"role": "assistant", "content": "Would you consider selling it for $10?"}
-        self.dialog_history.append(prompt)
+        if(self.buyer_instruction == "buyer"):
+            prompt = {"role": "assistant", "content": "Would you consider selling it for $%d?" % self.buyer_init_price}
+            self.dialog_history.append(prompt)
         return acknowledgement
     
 
-class SellerAgent(GPTAgent):
+class SellerAgent(DialogAgent):
     
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="seller",
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 cost_price=10,
+                 buyer_init_price=10,
+                 seller_init_price=20,
                 ):
-        super().__init__(initial_dialog_history, agent_type, engine)
+        """Initialize the seller agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+        self.seller_init_price = seller_init_price
+        self.buyer_init_price = buyer_init_price
+        self.cost_price = cost_price
+
+        print("Initializing seller with engine %s" % self.engine)
+
+        for i, d in enumerate(self.dialog_history):
+            self.dialog_history[i]["content"] = d["content"].replace("BUYER_INIT_PRICE", str(buyer_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace("SELLER_INIT_PRICE", str(seller_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace("COST_PRICE", str(cost_price))
+        return
+    
+    def reset(self):
+        """Reset dialog history"""
+        self.dialog_history = deepcopy(self.initial_dialog_history)
+
+        for i, d in enumerate(self.dialog_history):
+            self.dialog_history[i]["content"] = d["content"].replace("BUYER_INIT_PRICE", str(self.buyer_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace("SELLER_INIT_PRICE", str(self.seller_init_price))
+            self.dialog_history[i]["content"] = d["content"].replace("COST_PRICE", str(self.cost_price))
         return
     
     def receive_feedback(self, feedback, previous_price):
@@ -211,37 +269,54 @@ class SellerAgent(GPTAgent):
         # restart the bargaining 
         prompt = {"role": "user", "content": "Hi, how much is the balloon?"}
         self.dialog_history.append(prompt)
-        prompt = {"role": "assistant", "content": "Hi, this is a good baloon and its price is $20"}
+        prompt = {"role": "assistant", "content": "Hi, this is a good baloon and its price is $%d" % self.seller_init_price}
         self.dialog_history.append(prompt)
         return acknowledgement
 
-class ModeratorAgent(GPTAgent):
+class ModeratorAgent(DialogAgent):
     """NOTE: initial experiments shows that the moderator is much better at recognizing deal than not deal
     Do not know why but interesting 
     """
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="moderator",
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 trace_n_history=2,
                 ):
-        super().__init__(initial_dialog_history, agent_type, engine)
+        """Initialize the moderator agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+
+        self.trace_n_history = trace_n_history
+        print("Initializing moderator with engine %s" % self.engine)
         return
     
-    def moderate(self, seller_last_response, buyer_last_response, who_is_first="buyer", retry=True, debug=False):
-        if(who_is_first == "buyer"):
-            prompt = "buyer: %s\n" % buyer_last_response
-            prompt += "seller: %s\n" % seller_last_response
+    def moderate(self, 
+                 dialog_history, who_was_last="buyer", 
+                 retry=True):
+        """Moderate the conversation between the buyer and the seller"""
+        history_len = len(dialog_history)
+        if(who_was_last == "buyer"):
+            prompt = "buyer: %s\n" % dialog_history[history_len - 1]["content"]
+            offset = 1
         else: 
-            prompt = "seller: %s\n" % seller_last_response
-            prompt += "buyer: %s\n" % buyer_last_response
+            prompt = "seller: %s\n" % dialog_history[history_len - 1]["content"]
+            offset = 0
+
+        for i in range(self.trace_n_history - 1):
+            idx = history_len - i - 2
+            content = dialog_history[idx]["content"]
+            if(i % 2 == offset):
+                prompt = "buyer: %s\n" % content + prompt
+            else:
+                prompt = "seller: %s\n" % content + prompt
+        
         prompt += "question: have the seller and the buyer achieved a deal? Yes or No\nanswer:"
         self.last_prompt = prompt
         
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
-        # import ipdb; ipdb.set_trace()
 
-        if(debug): pprint(messages)
         if(retry):
             response = completion_with_backoff(
                           model=self.engine,
@@ -252,18 +327,23 @@ class ModeratorAgent(GPTAgent):
                         model=self.engine,
                         messages=messages
                         )
-        if(debug): pprint(response['choices'][0]['message']['content'])
+            
         return response['choices'][0]['message']['content']
     
 
-class SellerCriticAgent(GPTAgent):
+class SellerCriticAgent(DialogAgent):
     
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 expertise="lobbyist",
                 ):
-        super().__init__(initial_dialog_history, agent_type, engine)
+        """Initialize the seller critic agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+
+        print("Initializing seller critic with engine %s" % self.engine)
         return
     
     def criticize(self, seller_history, retry=True):
@@ -291,17 +371,21 @@ class SellerCriticAgent(GPTAgent):
                         messages=messages
                         )
         feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
-        feedback = "  " + feedback
+        # feedback = "  " + feedback
         return feedback
     
-class BuyerCriticAgent(GPTAgent):
+class BuyerCriticAgent(DialogAgent):
     
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
                  engine="gpt-3.5-turbo"
                 ):
-        super().__init__(initial_dialog_history, agent_type, engine)
+        """Initialize the buyer critic agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+
+        print("Initializing buyer critic with engine %s" % self.engine)
         return
     
     def criticize(self, buyer_history, retry=True):

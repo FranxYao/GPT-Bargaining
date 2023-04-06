@@ -6,164 +6,164 @@ Let's play a game. You are the moderator of a bargaining game. Your role is to d
 buyer: Can we meet in the middle at $15?
 seller: Sure, let's meet at $15 for this high-quality balloon.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: Yes. Because the buyer asked to meet in the middle at $15 and the seller confirmed.
+answer: Because the buyer asked to meet in the middle at $15 and the seller confirmed. The answer is Yes.
 
 buyer: That's still a bit high, can you go any lower?
 seller: Alright, I can sell it to you for $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm. 
+answer: Because the buyer did not confirm. The answer is No.
 
 seller: Sorry this is the highest price I can offer. 
 buyer: OK. I'll take the balloon.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: Yes. Because the buyer said "I'll take the balloon"
+answer: Because the buyer said "I'll take the balloon". The answer is Yes. 
 
 seller: I understand your request but can only sell it for this price.
 buyer: Thank you, but I think I cannot take the offer. Maybe next time. 
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer said they cannot take the offer. 
+answer: Because the buyer said they cannot take the offer. The answer is No. 
 
 seller: I'm sorry, I cannot lower the price any further, would you like to make an offer?
 buyer: How about $15?
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because they are still bargaining.
+answer: Because they are still bargaining. The answer is No. 
 
 seller: Well, how much are you willing to pay for it?
 buyer: I can only afford to pay $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the seller did not confirm.
+answer: Because the seller did not confirm. The anwer is No. 
 
 seller: Based on your request for a lower price, may I know what features of the balloon attract you the most? It might help me to understand how I can add more value to the balloon for you.
 buyer: I appreciate your offer, but $10 is too low. How about $15?
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the seller did not confirm.
+answer: Because the seller did not confirm. The answer is No. 
 
 seller: I appreciate your interest in the balloon, but I couldn't go below $16.
 buyer: I understand. Since it's still a bit higher than my budget, would you consider throwing in the complimentary gift you mentioned earlier?
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not confirm. The answer is No. 
 
 buyer: I understand, but is there any additional item or service that you could include with the balloon at the current price to make it more valuable for me?
 seller: I can include a ribbon and a personalized message tag at $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not agree yet. The answer is No.
 
 seller: That sounds good. Sold for $17!
 buyer: Great! Thank you, I appreciate it.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: Yes. Because both parts have confirmed.
+answer: Because both parts have confirmed the price to be $17. The answer is Yes. 
 
 buyer: Thank you for your offer, but I was hoping to spend a little bit less. How about I purchase two balloons and you give me a discount?
 seller: Certainly, I can offer you a 10% discount if you purchase two balloons. That would bring the price of two balloons down to $36.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not confirm. The answer is No. 
 
 buyer: I see. Would you consider selling it for $18 with free delivery?
 seller: As this is a limited edition balloon, I can go as low as $19 with free delivery.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not confirm. The answer is No. 
 
 buyer: I understand. Is there any way you could lower the price a bit more? I really like the balloon, but my budget is tight.
 seller: I can offer you a discount of $2, so you can purchase it for $16.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not confirm. The answer is No.
 
 buyer: Thank you for the offer, but I only need one balloon. Could you perhaps sell me this balloon for $15?
 seller: I can meet you halfway and offer you this balloon for $17.50.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Thank you for letting me know. Based on the balloon's condition, would you be willing to sell it for $13?
 seller: I can compromise with you and leave it for $14.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: That sounds great. Based on the quality and durability of the balloon, would you be willing to lower the price to $12.50?
 seller: Alright, I can sell it to you for $12.50.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer did not confirm.
+answer: Because the buyer did not confirm. The answer is No
 
 buyer: Thank you for your offer. Can you further lower the price?
 seller: I can go down to $17.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I understand, thank you for letting me know. If I may ask, is there anything we can negotiate on besides the price?
 seller: Unfortunately, the price is non-negotiable, but I can give you some extra balloons, free of charge as a token of my appreciation for your interest.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I see, I appreciate your honesty. Is there any chance you could include a free balloon pump with the purchase?
 seller: I can include a free balloon pump with the purchase if you agree to buy the balloon for $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I understand. Can we negotiate on the price? What's the lowest price you can offer?
 seller: The lowest I can go is $15 for this balloon.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I appreciate your offer, but I'm afraid it's still a bit too high for me. Would you consider maybe throwing in a pack of balloons or something to sweeten the deal if I were to purchase this balloon from you?
 seller: I can throw in a pack of small balloons if you buy the balloon for $16.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 seller: I appreciate your offer but I cannot go that low, My final offer is $16.
 buyer: I understand. Can I get any extra balloons with the current one if I agree to your final offer of $16?
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the seller have not agreed yet. 
+answer: Because the seller have not agreed yet. The answer is No
 
 buyer: That sounds like a good deal. So if I pay in cash, that would bring the price down to $18?
 seller: Actually, if you pay in cash I could lower the price to $13.50.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Thank you for your kind offer. Do you think you could lower the price a bit more?
 seller: I can do $15 for you as the final price.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not confirmed yet.
+answer: Because the buyer have not confirmed yet. The answer is No
 
 buyer: I understand, but I was wondering if there are any features of the balloon that I could get for a slightly lower price?
 seller: I can give you a free ribbon to go with it for $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Alright, I understand. Would you be willing to sell the balloon for $13?
 seller: I can make it $14, that's the lowest I'm willing to go.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because they are still negotiating.
+answer: Because they are still negotiating. The answer is No
 
 buyer: Thank you for the offer, but I was hoping to pay even less than that. How about $16?
 seller: I appreciate your offer, but $16 is still lower than what I can go for. The final price I can offer you is $17.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: No. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I understand. Can you do any better on the price?
 seller: How about $17? That's a really good price for this beautiful balloon.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet. 
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: I understand that, and I would love to have it. Is there any room for flexibility on the price?
 seller: I can lower the price to $15, but that is the best I can do.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet. 
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Thank you for letting me know. How about a compromise at $13?
 seller: I'm sorry, I cannot go that low. The final price will be $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet. 
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Excuse me, would you consider lowering the price a bit?
 seller: Sure, I can sell it to you for $15.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet. 
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Hmm, I was hoping for a lower price. Would you be willing to go any lower than $18?
 seller: Best I can do is $15. It's a great balloon, you won't regret it.
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
 
 buyer: Thank you for your offer, but $18 is still above my budget. Could you please go any lower?
 seller: Alright, my final offer is $15. Would you like to buy it for $15?
 question: have the seller and the buyer achieved a deal? Yes or No
-answer: no. Because the buyer have not agreed yet.
+answer: Because the buyer have not agreed yet. The answer is No
