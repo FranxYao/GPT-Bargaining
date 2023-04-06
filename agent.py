@@ -371,7 +371,6 @@ class SellerCriticAgent(DialogAgent):
                         messages=messages
                         )
         feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
-        # feedback = "  " + feedback
         return feedback
     
 class BuyerCriticAgent(DialogAgent):

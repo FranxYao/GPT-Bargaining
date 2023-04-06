@@ -2,8 +2,9 @@
 Using Claude as the backend for the agent. 
 TODO: implement the agent class
 """
+from agent import DialogAgent
 
-class ClaudeAgent(object):
+class ClaudeAgent(DialogAgent):
     """GPT Agent base class, later derived to be a seller, buyer, critic, or moderator
 
     TODO: add code to detect price inconsistency to seller and buyer
@@ -65,3 +66,25 @@ class ClaudeAgent(object):
     def last_response(self):
         raise NotImplementedError("ClaudeAgent is not implemented yet")
         return self.dialog_history[-1]['content']
+    
+
+class ClaudeBuyer(ClaudeAgent):
+
+    def __init__(self):
+        return 
+    
+
+class ClaudeSeller(ClaudeAgent):
+
+    def __init__(self):
+        return 
+    
+class ClaudeSellerCritic(ClaudeAgent):
+
+    def __init__(self):
+        return 
+    
+class ClaudeBuyerCritic(ClaudeAgent):
+
+    def __init__(self):
+        return 
