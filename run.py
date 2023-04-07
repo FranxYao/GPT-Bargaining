@@ -2,6 +2,7 @@ import openai
 import re
 import time
 import json
+import sys
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from tqdm import tqdm
 from pprint import pprint
 from agent import (load_initial_instructions, involve_moderator, parse_final_price, 
     BuyerAgent, SellerAgent, ModeratorAgent, SellerCriticAgent, BuyerCriticAgent)
+from agent_claude import (ClaudeBuyer, ClaudeSeller, ClaudeSellerCritic, ClaudeBuyerCritic)
 
 
 # add commandline arguments
@@ -59,6 +61,19 @@ openai.api_key = args.api_key
 from utils import * 
 logger = Logger(args.output_path + args.game_version + ".txt", args.verbose)
 
+# load engine mapping
+engine_map = json.load(open("engine_map.json", "r"))
+
+def get_engine(engine_name, agent_type):
+    class_name = ""
+
+    if 'criticize' in agent_type:
+        _, critic_type = agent_type.split('_')
+        class_name = engine_map[engine_name]['critic'][critic_type]
+    else:
+        class_name = engine_map[engine_name][agent_type]
+    
+    return getattr(sys.modules[__name__], class_name)
 
 def run(buyer, seller, moderator, 
         n_round=10, who_is_first="seller", no_deal_thres=10):
@@ -252,7 +267,9 @@ def main(args):
     # seller init
     seller_initial_dialog_history = load_initial_instructions('instructions/seller.txt')
     print(args.seller_engine)
-    seller = SellerAgent(initial_dialog_history=seller_initial_dialog_history, 
+    seller = get_engine(engine_name=args.seller_engine,
+                        agent_type="seller",
+                        )(initial_dialog_history=seller_initial_dialog_history, 
                          agent_type="seller", engine=args.seller_engine,
                          cost_price=args.cost_price, 
                          buyer_init_price=args.buyer_init_price,
@@ -261,32 +278,40 @@ def main(args):
 
     # buyer init
     buyer_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.buyer_instruction)
-    buyer = BuyerAgent(initial_dialog_history=buyer_initial_dialog_history, 
-                       agent_type="buyer", engine=args.buyer_engine, 
-                       buyer_instruction=args.buyer_instruction,
-                       buyer_init_price=args.buyer_init_price,
-                       seller_init_price=args.seller_init_price
-                       )
+    buyer = get_engine(engine_name=args.buyer_engine,
+                        agent_type="buyer",
+                        )(initial_dialog_history=buyer_initial_dialog_history, 
+                        agent_type="buyer", engine=args.buyer_engine, 
+                        buyer_instruction=args.buyer_instruction,
+                        buyer_init_price=args.buyer_init_price,
+                        seller_init_price=args.seller_init_price
+                        )
 
     # moderator init 
     moderator_initial_dialog_history = load_initial_instructions("instructions/%s.txt" % args.moderator_instruction)
-    moderator = ModeratorAgent(initial_dialog_history=moderator_initial_dialog_history, 
-                               agent_type="moderator", engine=args.moderator_engine,
-                               trace_n_history=args.moderator_trace_n_history
-                               )
+    moderator = get_engine(engine_name=args.moderator_engine,
+                            agent_type="moderator",
+                            )(initial_dialog_history=moderator_initial_dialog_history, 
+                            agent_type="moderator", engine=args.moderator_engine,
+                            trace_n_history=args.moderator_trace_n_history
+                            )
 
     # critic init 
     if(args.game_type == "criticize_seller"): 
          # seller critic init
         seller_critic_initial_dialog_history = load_initial_instructions('instructions/seller_critic.txt')
-        seller_critic = SellerCriticAgent(initial_dialog_history=seller_critic_initial_dialog_history, 
-                                agent_type="critic", engine=args.seller_critic_engine)
+        seller_critic = get_engine(engine_name=args.seller_critic_engine,
+                                    agent_type=args.game_type,
+                                    )(initial_dialog_history=seller_critic_initial_dialog_history, 
+                                    agent_type="critic", engine=args.seller_critic_engine)
         critic = seller_critic
     elif(args.game_type == "criticize_buyer"): 
         # buyer critic init
         buyer_critic_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.buyer_critic_instruction)
-        buyer_critic = BuyerCriticAgent(initial_dialog_history=buyer_critic_initial_dialog_history, 
-                                agent_type="critic", engine=args.buyer_critic_engine)
+        buyer_critic = get_engine(engine_name=args.buyer_critic_engine,
+                                    agent_type=args.game_type,
+                                    )(initial_dialog_history=buyer_critic_initial_dialog_history, 
+                                    agent_type="critic", engine=args.buyer_critic_engine)
         critic = buyer_critic
     else: raise ValueError("game_type must be either 'criticize_seller' or 'criticize_buyer'")
 

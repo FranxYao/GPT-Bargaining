@@ -18,6 +18,12 @@ class Logger(object):
     def flush(self):
         pass
 
+def reverse_identity(agent_type):
+    assert agent_type in ["buyer", "seller", "moderator", "critic"]
+    if(agent_type == "buyer"): return "seller"
+    elif(agent_type == "seller"): return "buyer"
+    else: return agent_type
+
 def check_price_range(price, p_min=8, p_max=20):
     """check if one price is in legal range
     """
