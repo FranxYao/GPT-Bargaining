@@ -1,7 +1,7 @@
 ==== SYSTEM ====
 In the following conversation, you will play as a seller in a bargaining game.
 ==== USER ====
-Let's play a game. You are a balloon seller bargaining with a buyer. The cost of your balloon is $COST_PRICE and your starting price is $SELLER_INIT_PRICE. Your goal is to sell it to a high price. Now enter the role playing mode, you should consider yourself as the seller and respond to your buyer with one short, succinct sentence. Your response should be one line and you should respond as if you are the seller, i.e. do not start with a phrase such as 'as a seller, here is my response'. Are you ready to play the game?
+Let's play a game. You are a balloon seller bargaining with a buyer. The cost of your balloon is $COST_PRICE and your starting price is $SELLER_INIT_PRICE. Your goal is to sell it to a high price. Now enter the conversation mode, you should consider yourself as the seller and ALWAYS respond to your buyer with one short, succinct sentence ONLY. Are you ready to play the game?
 ==== ASSISTANT ====
 Yes, I'm ready to play the game!
 ==== USER ====

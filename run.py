@@ -11,7 +11,7 @@ from pprint import pprint
 from agent import (load_initial_instructions, involve_moderator, parse_final_price, 
     BuyerAgent, SellerAgent, ModeratorAgent, SellerCriticAgent, BuyerCriticAgent)
 from agent_claude import (ClaudeBuyer, ClaudeSeller, ClaudeSellerCritic, ClaudeBuyerCritic)
-
+from consts import ANTHROPIC_API_KEY
 
 # add commandline arguments
 import argparse
@@ -35,6 +35,7 @@ parser.add_argument('--moderator_trace_n_history', type=int, default=2,
 
 parser.add_argument('--verbose', type=int, default=1, help="0: not print, 1: print")
 parser.add_argument('--api_key', type=str, default=None, help='openai api key')
+parser.add_argument('--anthropic_api_key', type=str, default=None, help='anthropic api key')
 parser.add_argument('--game_type', type=str, default=None, 
                     help='[criticize_seller, criticize_buyer]')
 parser.add_argument('--n_exp', type=int, default=1, 
@@ -55,6 +56,7 @@ parser.add_argument('--game_version', type=str, default="test",
                     help='version to record the game')
 args = parser.parse_args()
 openai.api_key = args.api_key
+ANTHROPIC_API_KEY = args.anthropic_api_key
 
 
 # define logging
@@ -267,31 +269,34 @@ def main(args):
     # seller init
     seller_initial_dialog_history = load_initial_instructions('instructions/seller.txt')
     print(args.seller_engine)
-    seller = get_engine(engine_name=args.seller_engine,
-                        agent_type="seller",
-                        )(initial_dialog_history=seller_initial_dialog_history, 
-                         agent_type="seller", engine=args.seller_engine,
-                         cost_price=args.cost_price, 
-                         buyer_init_price=args.buyer_init_price,
-                         seller_init_price=args.seller_init_price
-                         )
+    SELLER_ENGINE_CLASS = get_engine(engine_name=args.seller_engine,
+                                        agent_type="seller",
+                                        )
+    seller = SELLER_ENGINE_CLASS(initial_dialog_history=seller_initial_dialog_history, 
+                                agent_type="seller", engine=args.seller_engine,
+                                cost_price=args.cost_price, 
+                                buyer_init_price=args.buyer_init_price,
+                                seller_init_price=args.seller_init_price
+                                )
 
     # buyer init
     buyer_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.buyer_instruction)
-    buyer = get_engine(engine_name=args.buyer_engine,
-                        agent_type="buyer",
-                        )(initial_dialog_history=buyer_initial_dialog_history, 
-                        agent_type="buyer", engine=args.buyer_engine, 
-                        buyer_instruction=args.buyer_instruction,
-                        buyer_init_price=args.buyer_init_price,
-                        seller_init_price=args.seller_init_price
-                        )
+    BUYER_ENGINE_CLASS = get_engine(engine_name=args.buyer_engine,
+                                    agent_type="buyer",
+                                    )
+    buyer = BUYER_ENGINE_CLASS(initial_dialog_history=buyer_initial_dialog_history, 
+                                agent_type="buyer", engine=args.buyer_engine, 
+                                buyer_instruction=args.buyer_instruction,
+                                buyer_init_price=args.buyer_init_price,
+                                seller_init_price=args.seller_init_price
+                                )
 
     # moderator init 
     moderator_initial_dialog_history = load_initial_instructions("instructions/%s.txt" % args.moderator_instruction)
-    moderator = get_engine(engine_name=args.moderator_engine,
-                            agent_type="moderator",
-                            )(initial_dialog_history=moderator_initial_dialog_history, 
+    MODERATOR_ENGINE_CLASS = get_engine(engine_name=args.moderator_engine,
+                                        agent_type="moderator",
+                                        )
+    moderator = MODERATOR_ENGINE_CLASS(initial_dialog_history=moderator_initial_dialog_history, 
                             agent_type="moderator", engine=args.moderator_engine,
                             trace_n_history=args.moderator_trace_n_history
                             )
@@ -300,17 +305,19 @@ def main(args):
     if(args.game_type == "criticize_seller"): 
          # seller critic init
         seller_critic_initial_dialog_history = load_initial_instructions('instructions/seller_critic.txt')
-        seller_critic = get_engine(engine_name=args.seller_critic_engine,
-                                    agent_type=args.game_type,
-                                    )(initial_dialog_history=seller_critic_initial_dialog_history, 
+        SELLER_CRITIC_ENGINE_CLASS = get_engine(engine_name=args.seller_critic_engine,
+                                                agent_type=args.game_type,
+                                                )
+        seller_critic = SELLER_CRITIC_ENGINE_CLASS(initial_dialog_history=seller_critic_initial_dialog_history, 
                                     agent_type="critic", engine=args.seller_critic_engine)
         critic = seller_critic
     elif(args.game_type == "criticize_buyer"): 
         # buyer critic init
         buyer_critic_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.buyer_critic_instruction)
-        buyer_critic = get_engine(engine_name=args.buyer_critic_engine,
-                                    agent_type=args.game_type,
-                                    )(initial_dialog_history=buyer_critic_initial_dialog_history, 
+        BUYER_CRITIC_ENGINE_CLASS = get_engine(engine_name=args.buyer_critic_engine,
+                                                agent_type=args.game_type,
+                                                )
+        buyer_critic = BUYER_CRITIC_ENGINE_CLASS(initial_dialog_history=buyer_critic_initial_dialog_history, 
                                     agent_type="critic", engine=args.buyer_critic_engine)
         critic = buyer_critic
     else: raise ValueError("game_type must be either 'criticize_seller' or 'criticize_buyer'")

@@ -7,6 +7,7 @@ import anthropic
 from agent import DialogAgent
 from copy import deepcopy
 from utils import reverse_identity
+from consts import ANTHROPIC_API_KEY
 
 def parse_dialog_history(dialog_history, agent_type):
     """Parse the dialog history to the format required by Claude"""
@@ -39,8 +40,8 @@ class ClaudeAgent(DialogAgent):
                          system_instruction=system_instruction,
                          engine=engine)
 
-        # Initialize anthropic client using os env variable
-        self.claude = anthropic.Client(os.environ['ANTHROPIC_API_KEY'])
+        # Initialize anthropic client
+        self.claude = anthropic.Client(ANTHROPIC_API_KEY)
 
         self.last_prompt = ""
         return 
@@ -75,7 +76,9 @@ class ClaudeAgent(DialogAgent):
 
         # if the response starts with something like "as a seller, here's my response", then remove it
         try:
-            response = response.split("\n")[1].strip()
+            response_list = response.split("\n")
+            if len(response_list) > 1 and ("response" in response_list[0] or "respond" in response_list[0]):
+                response = response_list[-1].strip()
         except: 
             pass 
 
@@ -139,12 +142,13 @@ class ClaudeBuyer(ClaudeAgent):
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
         feedback += "But you are **not allowed** to ask for additionl service. "
-        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s." % str(previous_price)
+        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s. " % str(previous_price)
+        feedback += "And remember you should ALWAYS respond to your seller with one short, succinct sentence."
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
-        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
+        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic and only use one short, succinct sentence."
         acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
         # acknowledgement += " And I will try to buy it at a lower price than the previous round."
         prompt = {"role": "assistant", "content": acknowledgement}
@@ -212,13 +216,12 @@ class ClaudeSeller(ClaudeAgent):
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
         feedback += "Your goal is to sell the balloon at at higher price than the previous round, i.e., higher than $%s. " % str(previous_price)
-        feedback += "Now enter the role playing mode, you should consider yourself as the seller and respond to your buyer with one short, succinct sentence. "
-        feedback += "Your response should be one line and you should respond as if you are the seller. i.e. do not start with a phrase such as 'as a seller, here is my response'. "
+        feedback += "And remember you should ALWAYS respond to your seller with one short, succinct sentence."
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
-        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
+        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic and only use one short, succinct sentence."
         acknowledgement += " And I will try to sell it at a higher price (higher than $%s) than the previous round." % str(previous_price)
         prompt = {"role": "assistant", "content": acknowledgement}
         self.dialog_history.append(prompt)
@@ -232,10 +235,76 @@ class ClaudeSeller(ClaudeAgent):
     
 class ClaudeSellerCritic(ClaudeAgent):
 
-    def __init__(self):
-        return 
+    def __init__(self, 
+                 initial_dialog_history=None,
+                 agent_type="critic",
+                 engine="claude-v1",
+                 expertise="lobbyist",
+                ):
+        """Initialize the seller critic agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+
+        print("Initializing seller critic with engine %s" % self.engine)
+        return
+    
+    def criticize(self, seller_history, retry=True):
+        """Criticize the seller's negotiation strategy"""
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} "
+        for d in seller_history[1:]:
+            if(d["role"] == "user"):
+                claude_prompt += "buyer: %s\n" % d["content"]
+            elif(d["role"] == "assistant"):
+                claude_prompt += "seller: %s\n" % d["content"]
+        claude_prompt += "\n\nNow give three suggestions to improve the seller's negotiation strategy: "
+        claude_prompt += anthropic.AI_PROMPT
+        
+        # TODO: store the history of the critic
+        messages = deepcopy(self.dialog_history)
+        messages[-1]['content'] += "\n\n" + claude_prompt
+
+        response = self.claude.completion(
+            prompt=claude_prompt,
+            stop_sequences=[anthropic.HUMAN_PROMPT],
+            model="claude-v1",
+            max_tokens_to_sample=500,
+        )
+        feedback = response['completion'].strip().replace('\n\n', '\n')
+        return feedback
     
 class ClaudeBuyerCritic(ClaudeAgent):
 
-    def __init__(self):
-        return 
+    def __init__(self, 
+                 initial_dialog_history=None,
+                 agent_type="critic",
+                 engine="claude-v1"
+                ):
+        """Initialize the buyer critic agent"""
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type, engine=engine)
+
+        print("Initializing buyer critic with engine %s" % self.engine)
+        return
+    
+    def criticize(self, buyer_history, retry=True):
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} "
+        for d in buyer_history[1:]:
+            if(d["role"] == "user"):
+                claude_prompt += "seller: %s\n" % d["content"]
+            elif(d["role"] == "assistant"):
+                claude_prompt += "buyer: %s\n" % d["content"]
+        claude_prompt += "\n\nNow give three suggestions to improve the buyer's negotiation strategy: "
+        claude_prompt += anthropic.AI_PROMPT
+
+        # TODO: store the history of the critic
+        messages = deepcopy(self.dialog_history)
+        messages[-1]['content'] += "\n\n" + claude_prompt
+
+        response = self.claude.completion(
+            prompt=claude_prompt,
+            stop_sequences=[anthropic.HUMAN_PROMPT],
+            model="claude-v1",
+            max_tokens_to_sample=500,
+        )
+        feedback = response['completion'].strip().replace('\n\n', '\n')
+        return feedback
