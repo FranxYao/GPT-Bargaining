@@ -7,6 +7,7 @@ import anthropic
 from agent import DialogAgent
 from copy import deepcopy
 from utils import reverse_identity
+from consts import ANTHROPIC_API_KEY
 
 def parse_dialog_history(dialog_history, agent_type):
     """Parse the dialog history to the format required by Claude"""
@@ -39,8 +40,8 @@ class ClaudeAgent(DialogAgent):
                          system_instruction=system_instruction,
                          engine=engine)
 
-        # Initialize anthropic client using os env variable
-        self.claude = anthropic.Client(os.environ['ANTHROPIC_API_KEY'])
+        # Initialize anthropic client
+        self.claude = anthropic.Client(ANTHROPIC_API_KEY)
 
         self.last_prompt = ""
         return 
