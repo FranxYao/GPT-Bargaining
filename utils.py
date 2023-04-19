@@ -55,6 +55,6 @@ def parse_outputs(filepath, n_runs=2):
             case_price.append(price)
 
     if(len(case_price) > 0): 
-                assert(len(case_price) == 3)
-                prices.append(case_price)
+        assert(len(case_price) == n_runs)
+        prices.append(case_price)
     return prices

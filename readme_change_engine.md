@@ -54,4 +54,29 @@ python run.py\
     --buyer_critic_engine=${buyer_critic_engine}\
     --moderator_trace_n_history=${moderator_trace_n_history}\
     --game_version=${game_version}
+
+# criticize buyer, change buyer and critic engine to be claude-v1.3
+api_key=
+game_type=criticize_buyer
+moderator_instruction=moderator_buyer_reason_first
+buyer_engine=claude-v1.3
+buyer_critic_engine=claude-v1.3
+moderator_engine=gpt-4
+verbose=1
+game_version=buyer_critic_claude_500_runs_rollout_2_ver_1.8.0
+n_round=10
+n_rollout=2
+n_exp=500
+python run.py\
+    --api_key=${api_key}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_rollout=${n_rollout}\
+    --n_exp=${n_exp}\
+    --buyer_engine=${buyer_engine}\
+    --buyer_critic_engine=${buyer_critic_engine}\
+    --moderator_engine=${moderator_engine}\
+    --moderator_instruction=${moderator_instruction}\
+    --game_version=${game_version}
 ```

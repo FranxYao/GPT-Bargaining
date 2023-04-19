@@ -11,8 +11,8 @@
 api_key=
 game_type=criticize_buyer
 moderator_instruction=moderator_buyer_reason_first
-buyer_engine=claude-v1
-buyer_critic_engine=claude-v1
+buyer_engine=claude-v1.3
+buyer_critic_engine=claude-v1.3
 moderator_engine=gpt-4
 verbose=1
 game_version=buyer_critic_claude_500_runs_rollout_2_ver_1.8.0

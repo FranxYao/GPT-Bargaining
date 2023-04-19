@@ -74,13 +74,15 @@ class DialogAgent(object):
                  initial_dialog_history=None,
                  agent_type="", # "seller", "buyer", "critic", "moderator"
                  system_instruction="You are a helpful AI assistant", 
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 api_key=""
                 ):
         """Initialize the agent"""
         super().__init__()
         
         self.agent_type = agent_type
         self.engine = engine
+        self.api_key = api_key
 
         if(initial_dialog_history is None):
             self.dialog_history = [{"role": "system", "content": system_instruction}]
@@ -139,6 +141,7 @@ class BuyerAgent(DialogAgent):
                  initial_dialog_history=None,
                  agent_type="buyer",
                  engine="gpt-3.5-turbo",
+                 api_key="",
                  buyer_instruction="buyer",
                  buyer_init_price=10,
                  seller_init_price=20,
@@ -214,6 +217,7 @@ class SellerAgent(DialogAgent):
                  initial_dialog_history=None,
                  agent_type="seller",
                  engine="gpt-3.5-turbo",
+                 api_key="",
                  cost_price=10,
                  buyer_init_price=10,
                  seller_init_price=20,
@@ -281,6 +285,7 @@ class ModeratorAgent(DialogAgent):
                  initial_dialog_history=None,
                  agent_type="moderator",
                  engine="gpt-3.5-turbo",
+                 api_key="",
                  trace_n_history=2,
                 ):
         """Initialize the moderator agent"""
@@ -337,6 +342,7 @@ class SellerCriticAgent(DialogAgent):
                  initial_dialog_history=None,
                  agent_type="critic",
                  engine="gpt-3.5-turbo",
+                 api_key="",
                  expertise="lobbyist",
                 ):
         """Initialize the seller critic agent"""
@@ -378,7 +384,8 @@ class BuyerCriticAgent(DialogAgent):
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="gpt-3.5-turbo"
+                 engine="gpt-3.5-turbo",
+                 api_key="",
                 ):
         """Initialize the buyer critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 

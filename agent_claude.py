@@ -7,7 +7,6 @@ import anthropic
 from agent import DialogAgent
 from copy import deepcopy
 from utils import reverse_identity
-from consts import ANTHROPIC_API_KEY
 
 def parse_dialog_history(dialog_history, agent_type):
     """Parse the dialog history to the format required by Claude"""
@@ -33,15 +32,18 @@ class ClaudeAgent(DialogAgent):
                  initial_dialog_history=None,
                  agent_type="", # "seller", "buyer", "critic", "moderator"
                  system_instruction="You are a helpful AI assistant", 
-                 engine="claude-v1"
+                 engine="claude-v1.3",
+                 api_key=""
                 ):
         super().__init__(initial_dialog_history=initial_dialog_history, 
                          agent_type=agent_type,
                          system_instruction=system_instruction,
-                         engine=engine)
+                         engine=engine,
+                         api_key=api_key
+                         )
 
         # Initialize anthropic client
-        self.claude = anthropic.Client(ANTHROPIC_API_KEY)
+        self.claude = anthropic.Client(self.api_key)
 
         self.last_prompt = ""
         return 
@@ -96,14 +98,15 @@ class ClaudeBuyer(ClaudeAgent):
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="buyer",
-                 engine="claude-v1",
+                 engine="claude-v1.3",
+                 api_key="",
                  buyer_instruction="buyer",
                  buyer_init_price=10,
                  seller_init_price=20,
                 ):
         """Initialize the buyer agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
         self.buyer_instruction = buyer_instruction
         self.buyer_init_price = buyer_init_price
         self.seller_init_price = seller_init_price
@@ -172,14 +175,15 @@ class ClaudeSeller(ClaudeAgent):
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="seller",
-                 engine="claude-v1",
+                 engine="claude-v1.3",
+                 api_key="",
                  cost_price=10,
                  buyer_init_price=10,
                  seller_init_price=20,
                 ):
         """Initialize the seller agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
         self.seller_init_price = seller_init_price
         self.buyer_init_price = buyer_init_price
         self.cost_price = cost_price
@@ -238,12 +242,13 @@ class ClaudeSellerCritic(ClaudeAgent):
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="claude-v1",
+                 engine="claude-v1.3",
+                 api_key="",
                  expertise="lobbyist",
                 ):
         """Initialize the seller critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
 
         print("Initializing seller critic with engine %s" % self.engine)
         return
@@ -277,11 +282,12 @@ class ClaudeBuyerCritic(ClaudeAgent):
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="claude-v1"
+                 engine="claude-v1.3",
+                 api_key=""
                 ):
         """Initialize the buyer critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
 
         print("Initializing buyer critic with engine %s" % self.engine)
         return
