@@ -40,14 +40,14 @@ def check_k_price_range(prices, p_min=8, p_max=20):
             break
     return all_in_range
 
-def parse_outputs(filepath, n_runs=2):
+def parse_outputs(filepath, price_per_case=4):
     prices = []
     lines = open(filepath).readlines()
     case_price = []
     for l in lines:
         if(l.startswith("==== CASE")):
             if(len(case_price) > 0): 
-                assert(len(case_price) == n_runs)
+                assert(len(case_price) == price_per_case)
                 prices.append(case_price)
             case_price = []
         elif(l.startswith("PRICE: ")):
@@ -55,6 +55,6 @@ def parse_outputs(filepath, n_runs=2):
             case_price.append(price)
 
     if(len(case_price) > 0): 
-        assert(len(case_price) == n_runs)
+        assert(len(case_price) == price_per_case)
         prices.append(case_price)
     return prices
