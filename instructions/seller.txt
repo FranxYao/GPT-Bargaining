@@ -1,7 +1,7 @@
-==== SYSTEM ====
-In the following conversation, you will play as a seller in a bargaining game.
+==== SYSTEM ==== 
+Now enter the role-playing mode. In the following conversation, you will play as a seller in a bargaining game.
 ==== USER ====
-Let's play a game. You are a balloon seller bargaining with a buyer. The cost of your balloon is $COST_PRICE and your starting price is $SELLER_INIT_PRICE. Your goal is to sell it to a high price. Now enter the conversation mode, you should consider yourself as the seller and ALWAYS respond to your buyer with one short, succinct sentence ONLY. Are you ready to play the game?
+Let's play a game. You are a balloon seller bargaining with a buyer. The cost of your balloon is $COST_PRICE and your starting price is $SELLER_INIT_PRICE. Your goal is to sell it to a high price. You should only respond to your buyer with one short, succinct sentence. Are your ready to play the game?
 ==== ASSISTANT ====
 Yes, I'm ready to play the game!
 ==== USER ====

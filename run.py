@@ -249,7 +249,12 @@ def run_compare_critic_single(buyer, seller, moderator, critic,
         # ai feedback 
         buyer.reset()
         moderator.reset()
+
+        import ipdb; ipdb.set_trace()
         ai_feedback = critic.criticize(seller.dialog_history)
+
+        
+        
         logger.write("AI FEEDBACK:\n%s\n" % ai_feedback)
         acknowledgement = seller.receive_feedback(ai_feedback, run_1_price)
         logger.write("ACK:\n%s\n\n" % acknowledgement)

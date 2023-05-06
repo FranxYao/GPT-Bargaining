@@ -1,5 +1,9 @@
 # Instruction Library for different agents
 
+Buyer
+
+Seller
+
 Hardest one is the moderator
 * moderator_seller.txt -- moderator used when criticizing seller
 * moderator_buyer.txt -- moderator used when criticizing buyer, initial version

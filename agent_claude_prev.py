@@ -1,71 +1,36 @@
-import openai
-import re 
-
+"""
+Using Claude as the backend for the agent. 
+TODO: implement the agent class
+"""
+import os
+import anthropic
+from agent import DialogAgent
 from copy import deepcopy
-from pprint import pprint
+from pprint import pprint 
+from utils import reverse_identity
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
 @retry(stop=stop_after_attempt(3), 
-        wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
+       wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
                        [wait_fixed(5) for i in range(1)]))
-def completion_with_backoff(**kwargs):
-    return openai.ChatCompletion.create(**kwargs)
+def claude_completion_with_backoff(api, **kwargs):
+    return api.completion(**kwargs)
 
-def load_initial_instructions(path_to_instructions):
-    pattern = r"==== (SYSTEM|USER|ASSISTANT) ===="
+def gpt_to_claude_prompt(dialog_history, agent_type):
+    """Converts GPT prompt to a Claude prompt"""
+    messages = []
+    for message in dialog_history:
+        if message['role'] == 'system':
+            messages.append(message['content'])
+        elif message['role'] == 'user':
+            messages.append(f"\n{reverse_identity(agent_type)}: {message['content']}")
+        elif message['role'] == 'assistant':
+            messages.append(f"\n{agent_type}: {message['content']}")
+        else:
+            raise ValueError(f"Unknown role {message['role']}")
+    return messages
 
-    # Use re.split to split the string by the pattern
-    with open(path_to_instructions) as f:
-        content = f.read()
-        content = re.split(pattern, content)
-        content_ = []
-        for c in content: 
-            if(c != ""): content_.append(c)
-        content = content_
-        l = len(content)
-        assert(l % 2 == 0)
-        initial_instruction = []
-        for i in range(0, l, 2):
-            instruction = {"role": content[i].strip().lower().replace("====", "").replace(" ", "").strip(), 
-                           "content": content[i+1].strip()
-                           }
-            initial_instruction.append(instruction)
-    return initial_instruction
-
-def involve_moderator(player_1_run, player_2_run):
-    """If at least one player's response does not contain a number, involve a moderator
-    The moderator determines if they players have reached an agreement, or break the 
-    negotiation, or is still in negotiation.
-    """
-    number_pattern = r"[-+]?\d*\.\d+|\d+"
-
-    # Use re.search to find if the string contains a match to the pattern
-    match_1 = re.search(number_pattern, player_1_run)
-    # print(match_1)
-    match_2 = re.search(number_pattern, player_2_run)
-    # print(match_2)
-    if((match_1 is not None and match_2 is None) or 
-       (match_1 is None and match_2 is not None)
-       or (match_1 is None and match_2 is None)
-      ): return True
-    else: return False
-
-def parse_final_price(dialog_history):
-    """parse the final price from the dialog history"""
-    # money_pattern = r"\$[-+]?\d*\.\d+|\d+"
-    # money_pattern = r'\$\d+(\.\d+)?'
-    money_pattern = r'\$\d+(?:\.\d+)?'
-
-    for d in dialog_history[::-1]:
-        match = re.findall(money_pattern, d["content"])
-        if(len(match) >= 1):
-            final_price = match[-1]
-            if(final_price[0] == "$"): final_price = float(final_price[1:])
-            else: final_price = float(final_price)
-            return final_price
-    return -1
-
-class DialogAgent(object):
+class ClaudeAgent(DialogAgent):
     """GPT Agent base class, later derived to be a seller, buyer, critic, or moderator
 
     TODO: add code to detect price inconsistency to seller and buyer
@@ -75,75 +40,81 @@ class DialogAgent(object):
                  initial_dialog_history=None,
                  agent_type="", # "seller", "buyer", "critic", "moderator"
                  system_instruction="You are a helpful AI assistant", 
-                 engine="gpt-3.5-turbo",
+                 engine="claude-v1.3",
                  api_key=""
                 ):
-        """Initialize the agent"""
-        super().__init__()
-        
-        self.agent_type = agent_type
-        self.engine = engine
-        self.api_key = api_key
+        super().__init__(initial_dialog_history=initial_dialog_history, 
+                         agent_type=agent_type,
+                         system_instruction=system_instruction,
+                         engine=engine,
+                         api_key=api_key
+                         )
 
-        if(initial_dialog_history is None):
-            self.dialog_history = [{"role": "system", "content": system_instruction}]
-        else:
-            self.initial_dialog_history = deepcopy(initial_dialog_history)
-            self.dialog_history = deepcopy(initial_dialog_history)
+        # Initialize anthropic client
+        self.claude = anthropic.Client(self.api_key)
+        self.engine = engine
 
         self.last_prompt = ""
         return 
     
     def reset(self):
-        """Reset dialog history"""
         self.dialog_history = deepcopy(self.initial_dialog_history)
         return 
         
     
-    def call(self, prompt, retry=True):
-        """Call the agent with a prompt"""
-        # TODO: refactor the code, add `remember_history` flag
-        #       if yes, then add the prompt to the dialog history, else not
+    def call(self, prompt):
+        """Call the Claude agent to generate a response"""
         prompt = {"role": "user", "content": prompt}
         self.dialog_history.append(prompt)
         self.last_prompt = prompt['content']
         
-        messages = list(self.dialog_history)
-        messages.append(prompt)
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        message = response['choices'][0]['message']
-        assert(message['role'] == 'assistant')
+        # Construct prompt for claude
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} "
+
+        for message in gpt_to_claude_prompt(self.dialog_history, self.agent_type):
+            claude_prompt += message
+        
+        claude_prompt += f"\n{self.agent_type}: "
+        claude_prompt += anthropic.AI_PROMPT
+        # request claude
+        # response = self.claude.completion(
+        #     prompt=claude_prompt,
+        #     stop_sequences=[anthropic.HUMAN_PROMPT],
+        #     model=self.engine,
+        #     max_tokens_to_sample=100,
+        # )
+        import ipdb; ipdb.set_trace()
+        response = claude_completion_with_backoff(self.claude, 
+                                                    prompt=claude_prompt,
+                                                    stop_sequences=[anthropic.HUMAN_PROMPT],
+                                                    model=self.engine,
+                                                    max_tokens_to_sample=100,
+                                                    )
+        response = response['completion'].strip()
+
+        # if the response starts with something like "as a seller, here's my response", then remove it
+        try:
+            response_list = response.split("\n")
+            if len(response_list) > 1 and ("response" in response_list[0] or "respond" in response_list[0]):
+                response = response_list[-1].strip()
+        except: 
+            pass 
+
+        message = {"role": "assistant", "content": response}
         self.dialog_history.append(dict(message))
-        # self.dialog_round += 1
-        # self.history_len = response['usage']['total_tokens']
         return message['content']
 
     @property
     def last_response(self):
         return self.dialog_history[-1]['content']
     
-    @property
-    def history(self):
-        for h in self.dialog_history:
-            print('%s:  %s' % (h["role"], h["content"]))
-        return 
-    
 
-class BuyerAgent(DialogAgent):
+class ClaudeBuyer(ClaudeAgent):
 
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="buyer",
-                 engine="gpt-3.5-turbo",
+                 engine="claude-v1.3",
                  api_key="",
                  buyer_instruction="buyer",
                  buyer_init_price=10,
@@ -151,7 +122,7 @@ class BuyerAgent(DialogAgent):
                 ):
         """Initialize the buyer agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
         self.buyer_instruction = buyer_instruction
         self.buyer_init_price = buyer_init_price
         self.seller_init_price = seller_init_price
@@ -190,12 +161,13 @@ class BuyerAgent(DialogAgent):
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
         feedback += "But you are **not allowed** to ask for additionl service. "
-        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s." % str(previous_price)
+        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s. " % str(previous_price)
+        feedback += "And remember you should ALWAYS respond to your seller with one short, succinct sentence."
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
-        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
+        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic and only use one short, succinct sentence."
         acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
         # acknowledgement += " And I will try to buy it at a lower price than the previous round."
         prompt = {"role": "assistant", "content": acknowledgement}
@@ -214,12 +186,12 @@ class BuyerAgent(DialogAgent):
         return acknowledgement
     
 
-class SellerAgent(DialogAgent):
-    
+class ClaudeSeller(ClaudeAgent):
+
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="seller",
-                 engine="gpt-3.5-turbo",
+                 engine="claude-v1.3",
                  api_key="",
                  cost_price=10,
                  buyer_init_price=10,
@@ -227,7 +199,7 @@ class SellerAgent(DialogAgent):
                 ):
         """Initialize the seller agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
         self.seller_init_price = seller_init_price
         self.buyer_init_price = buyer_init_price
         self.cost_price = cost_price
@@ -263,12 +235,13 @@ class SellerAgent(DialogAgent):
         feedback = feedback_prefix + feedback + "\n\n"
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
-        feedback += "Your goal is to sell the balloon at at higher price than the previous round, i.e., higher than $%s." % str(previous_price)
+        feedback += "Your goal is to sell the balloon at at higher price than the previous round, i.e., higher than $%s. " % str(previous_price)
+        feedback += "And remember you should ALWAYS respond to your seller with one short, succinct sentence."
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
-        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
+        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic and only use one short, succinct sentence."
         acknowledgement += " And I will try to sell it at a higher price (higher than $%s) than the previous round." % str(previous_price)
         prompt = {"role": "assistant", "content": acknowledgement}
         self.dialog_history.append(prompt)
@@ -279,145 +252,93 @@ class SellerAgent(DialogAgent):
         prompt = {"role": "assistant", "content": "Hi, this is a good baloon and its price is $%d" % self.seller_init_price}
         self.dialog_history.append(prompt)
         return acknowledgement
-
-class ModeratorAgent(DialogAgent):
-    """NOTE: initial experiments shows that the moderator is much better at recognizing deal than not deal
-    Do not know why but interesting 
-    """
-    def __init__(self, 
-                 initial_dialog_history=None,
-                 agent_type="moderator",
-                 engine="gpt-3.5-turbo",
-                 api_key="",
-                 trace_n_history=2,
-                ):
-        """Initialize the moderator agent"""
-        super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
-
-        self.trace_n_history = trace_n_history
-        print("Initializing moderator with engine %s" % self.engine)
-        return
     
-    def moderate(self, 
-                 dialog_history, who_was_last="buyer", 
-                 retry=True):
-        """Moderate the conversation between the buyer and the seller"""
-        history_len = len(dialog_history)
-        if(who_was_last == "buyer"):
-            prompt = "buyer: %s\n" % dialog_history[history_len - 1]["content"]
-            offset = 1
-        else: 
-            prompt = "seller: %s\n" % dialog_history[history_len - 1]["content"]
-            offset = 0
+class ClaudeSellerCritic(ClaudeAgent):
 
-        for i in range(self.trace_n_history - 1):
-            idx = history_len - i - 2
-            content = dialog_history[idx]["content"]
-            if(i % 2 == offset):
-                prompt = "buyer: %s\n" % content + prompt
-            else:
-                prompt = "seller: %s\n" % content + prompt
-        
-        prompt += "question: have the seller and the buyer achieved a deal? Yes or No\nanswer:"
-        self.last_prompt = prompt
-        
-        messages = deepcopy(self.dialog_history)
-        messages[-1]['content'] += "\n\n" + prompt
-
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-            
-        return response['choices'][0]['message']['content']
-    
-
-class SellerCriticAgent(DialogAgent):
-    
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="gpt-3.5-turbo",
+                 engine="claude-v1.3",
                  api_key="",
                  expertise="lobbyist",
                 ):
         """Initialize the seller critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
 
         print("Initializing seller critic with engine %s" % self.engine)
         return
     
     def criticize(self, seller_history, retry=True):
         """Criticize the seller's negotiation strategy"""
-        prompt = "\n"
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} "
         for d in seller_history[1:]:
             if(d["role"] == "user"):
-                prompt += "buyer: %s\n" % d["content"]
+                claude_prompt += "buyer: %s\n" % d["content"]
             elif(d["role"] == "assistant"):
-                prompt += "seller: %s\n" % d["content"]
-        prompt += "\n\nNow give three suggestions to improve the seller's negotiation strategy: "
+                claude_prompt += "seller: %s\n" % d["content"]
+        claude_prompt += "\n\nNow give three suggestions to improve the seller's negotiation strategy: "
+        claude_prompt += anthropic.AI_PROMPT
         
         # TODO: store the history of the critic
         messages = deepcopy(self.dialog_history)
-        messages[-1]['content'] += "\n\n" + prompt
+        messages[-1]['content'] += "\n\n" + claude_prompt
 
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        # response = self.claude.completion(
+        #     prompt=claude_prompt,
+        #     stop_sequences=[anthropic.HUMAN_PROMPT],
+        #     model=self.engine,
+        #     max_tokens_to_sample=500,
+        # )
+        response = claude_completion_with_backoff(self.claude, 
+                                                    prompt=claude_prompt,
+                                                    stop_sequences=[anthropic.HUMAN_PROMPT], 
+                                                    model=self.engine,
+                                                    max_tokens_to_sample=256
+                                                    )
+        feedback = response['completion'].strip().replace('\n\n', '\n')
         return feedback
     
-class BuyerCriticAgent(DialogAgent):
-    
+class ClaudeBuyerCritic(ClaudeAgent):
+
     def __init__(self, 
                  initial_dialog_history=None,
                  agent_type="critic",
-                 engine="gpt-3.5-turbo",
-                 api_key="",
+                 engine="claude-v1.3",
+                 api_key=""
                 ):
         """Initialize the buyer critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, engine=engine, api_key=api_key)
 
         print("Initializing buyer critic with engine %s" % self.engine)
         return
     
     def criticize(self, buyer_history, retry=True):
-        prompt = "\n"
+        claude_prompt = f"{anthropic.HUMAN_PROMPT} "
         for d in buyer_history[1:]:
             if(d["role"] == "user"):
-                prompt += "seller: %s\n" % d["content"]
+                claude_prompt += "seller: %s\n" % d["content"]
             elif(d["role"] == "assistant"):
-                prompt += "buyer: %s\n" % d["content"]
-        prompt += "\n\nNow give three suggestions to improve the buyer's negotiation strategy: "
+                claude_prompt += "buyer: %s\n" % d["content"]
+        claude_prompt += "\n\nNow give three suggestions to improve the buyer's negotiation strategy: "
+        claude_prompt += anthropic.AI_PROMPT
 
+        # TODO: store the history of the critic
         messages = deepcopy(self.dialog_history)
-        messages[-1]['content'] += "\n\n" + prompt
+        messages[-1]['content'] += "\n\n" + claude_prompt
 
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        # response = self.claude.completion(
+        #     prompt=claude_prompt,
+        #     stop_sequences=[anthropic.HUMAN_PROMPT],
+        #     model=self.engine,
+        #     max_tokens_to_sample=500,
+        # )
+        response = claude_completion_with_backoff(self.claude, 
+                                                  prompt=claude_prompt,
+                                                  stop_sequences=[anthropic.HUMAN_PROMPT],
+                                                  model=self.engine,
+                                                  max_tokens_to_sample=256
+                                                  )
+        feedback = response['completion'].strip().replace('\n\n', '\n')
         return feedback

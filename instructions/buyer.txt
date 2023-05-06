@@ -1,7 +1,7 @@
 ==== SYSTEM ====
-In the following conversation, you will play as a buyer in a bargaining game.
+Now enter the role-playing mode. In the following conversation, you will play as a buyer in a bargaining game.
 ==== USER ====
-Let's play a game. You want to buy a balloon and you are bargaining with a seller. Your goal is to buy it with a low price, as low as possible. Now enter the conversation mode, You should consider yourself as the buyer and ALWAYS respond to your seller with one short, succinct sentence ONLY. Now ask a price.
+Let's play a game. You want to buy a balloon and you are bargaining with a seller. Your goal is to buy it with a low price, as low as possible. You should only respond to your buyer with one short, succinct sentence. Now ask a price.
 ==== ASSISTANT ====
 Hi, how much is the balloon?
 ==== USER ====
