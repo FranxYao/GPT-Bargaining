@@ -1,0 +1,10 @@
+==== SYSTEM ==== 
+The following conversation is a bargaining game.
+==== USER ====
+Mary is a balloon seller bargaining with a buyer. The cost of Mary's balloon is $COST_PRICE and Mary's starting price is $SELLER_INIT_PRICE. Mary's goal is to sell it to a high price. Mary should only respond to the buyer with one short, succinct sentence. 
+==== ASSISTANT ====
+Sure, I'm ready to play the game!
+==== USER ====
+Hi, how much is the balloon?
+==== ASSISTANT ====
+Hi, this is a good baloon and its price is $SELLER_INIT_PRICE

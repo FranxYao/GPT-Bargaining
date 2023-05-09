@@ -1,17 +1,88 @@
 import openai
+import anthropic
+import ai21
 import re 
 
 from copy import deepcopy
 from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
+
 @retry(stop=stop_after_attempt(3), 
         wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
                        [wait_fixed(5) for i in range(1)]))
 def completion_with_backoff(**kwargs):
+    """OpenAI API wrapper, if network error then retry 3 times"""
     return openai.ChatCompletion.create(**kwargs)
 
+
+@retry(stop=stop_after_attempt(3), 
+       wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
+                       [wait_fixed(5) for i in range(1)]))
+def claude_completion_with_backoff(api, **kwargs):
+    """Claude API wrapper, if network error then retry 3 times"""
+    return api.completion(**kwargs)
+
+@retry(stop=stop_after_attempt(3), 
+       wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
+                       [wait_fixed(5) for i in range(1)]))
+def ai21_completion_with_backoff(**kwargs):
+    """AI21 API wrapper, if network error then retry 3 times"""
+    return ai21.Completion.execute(**kwargs)
+
+
+def convert_openai_to_anthropic_prompt(prompt):
+    """Convert OpenAI API format to Claude format"""
+    prompt_claude = "\n\nHuman: %s\n\n" % prompt[0]["content"] + "\n\n" + prompt[1]["content"]
+    for p in prompt[2:]:
+        if(p["role"] == "user"):
+            prompt_claude += '\n\nHuman: %s' % p["content"]
+        elif(p["role"] == "assistant"):
+            prompt_claude += '\n\nAssistant: %s' % p["content"]
+
+    prompt_claude += '\n\nAssistant:'
+    return prompt_claude
+
+def convert_openai_to_ai21_prompt_format_1(prompt, agent_type="buyer"):
+    """Convert OpenAI API format to AI21 format"""
+    prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"] + "\n\n##\n"
+
+    # if(agent_type == "seller"): counterpart = "Buyer"
+    # elif(agent_type == "buyer"): counterpart = "Seller"
+    # else: pass 
+    
+    for p in prompt[2:]:
+        if(p["role"] == "user"):
+            prompt_ai21 += '\n\nUser: %s\n\n##' % (p["content"])
+        elif(p["role"] == "assistant"):
+            prompt_ai21 += '\n\nMary: %s\n\n##' % p["content"]
+
+    prompt_ai21 += "\n\nMary:"
+    return prompt_ai21
+
+def convert_openai_to_ai21_prompt_format_2(prompt, agent_type="buyer"):
+    """Convert OpenAI API format to AI21 format"""
+    prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"]
+
+    # if(agent_type == "seller"): counterpart = "Buyer"
+    # elif(agent_type == "buyer"): counterpart = "Seller"
+    # else: pass 
+    
+    # for p in prompt[2:]:
+    #     if(p["role"] == "user"):
+    #         prompt_ai21 += '\n\n%s: %s' % (counterpart, p["content"])
+    #     elif(p["role"] == "assistant"):
+    #         prompt_ai21 += '\n\nMary: %s' % p["content"]
+
+    # prompt_ai21 += "\n\nMary:"
+    return prompt_ai21
+
+def convert_openai_to_cohere_prompt(prompt):
+    raise NotImplementedError("Cohere API is not implemented yet")
+
+
 def load_initial_instructions(path_to_instructions):
+    """Load initial instructions from textual format to a python dict"""
     pattern = r"==== (SYSTEM|USER|ASSISTANT) ===="
 
     # Use re.split to split the string by the pattern
@@ -32,6 +103,7 @@ def load_initial_instructions(path_to_instructions):
             initial_instruction.append(instruction)
     return initial_instruction
 
+
 def involve_moderator(player_1_run, player_2_run):
     """If at least one player's response does not contain a number, involve a moderator
     The moderator determines if they players have reached an agreement, or break the 
@@ -50,6 +122,7 @@ def involve_moderator(player_1_run, player_2_run):
       ): return True
     else: return False
 
+
 def parse_final_price(dialog_history):
     """parse the final price from the dialog history"""
     # money_pattern = r"\$[-+]?\d*\.\d+|\d+"
@@ -64,6 +137,7 @@ def parse_final_price(dialog_history):
             else: final_price = float(final_price)
             return final_price
     return -1
+
 
 class DialogAgent(object):
     """GPT Agent base class, later derived to be a seller, buyer, critic, or moderator
@@ -85,6 +159,9 @@ class DialogAgent(object):
         self.engine = engine
         self.api_key = api_key
 
+        if("claude" in self.engine):
+            self.claude = anthropic.Client(self.api_key)
+
         if(initial_dialog_history is None):
             self.dialog_history = [{"role": "system", "content": system_instruction}]
         else:
@@ -98,10 +175,55 @@ class DialogAgent(object):
         """Reset dialog history"""
         self.dialog_history = deepcopy(self.initial_dialog_history)
         return 
+
+    def call_engine(self, messages):
+        """Route the call to different engines"""
+        if("gpt" in self.engine):
+            # import ipdb; ipdb.set_trace()
+            response = completion_with_backoff(
+                          model=self.engine,
+                          messages=messages
+                        )
+            message = response['choices'][0]['message']
+            assert(message['role'] == 'assistant')
+        elif("claude" in self.engine):
+            prompt_claude = convert_openai_to_anthropic_prompt(messages)
+            # import ipdb; ipdb.set_trace()
+            response = claude_completion_with_backoff(self.claude, 
+                                                      prompt=prompt_claude,
+                                                      stop_sequences=[anthropic.HUMAN_PROMPT],
+                                                      model=self.engine,
+                                                      max_tokens_to_sample=512,
+                                                      )
+            message = {"role": "assistant", "content": response["completion"].strip()}
+        elif("j2" in self.engine):
+            prompt_ai21 = convert_openai_to_ai21_prompt_format_1(messages, self.agent_type)
+            # import ipdb; ipdb.set_trace()
+            response = ai21_completion_with_backoff(model=self.engine,
+                                                    prompt=prompt_ai21,
+                                                    numResults=1,
+                                                    maxTokens=512,
+                                                    temperature=0.7,
+                                                    topKReturn=0,
+                                                    topP=1,
+                                                    stopSequences=["##"]
+                                                    )
+            content = response["completions"][0]["data"]["text"]
+            if(self.agent_type in ["seller", "buyer"]):
+                content = content.split('\n')[0]
+            message = {"role": "assistant", 
+                       "content": content
+                       }
+        elif("cohere" in self.engine):
+            raise NotImplementedError("Cohere API is not implemented yet")
+        else:
+            raise ValueError("Unknown engine %s" % self.engine)
+        return message
         
     
-    def call(self, prompt, retry=True):
-        """Call the agent with a prompt"""
+    def call(self, prompt):
+        """Call the agent with a prompt. Handle different backend engines in this function
+        """
         # TODO: refactor the code, add `remember_history` flag
         #       if yes, then add the prompt to the dialog history, else not
         prompt = {"role": "user", "content": prompt}
@@ -109,20 +231,12 @@ class DialogAgent(object):
         self.last_prompt = prompt['content']
         
         messages = list(self.dialog_history)
-        messages.append(prompt)
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        message = response['choices'][0]['message']
-        assert(message['role'] == 'assistant')
+        # messages.append(prompt)
+
+        message = self.call_engine(messages)
+        
         self.dialog_history.append(dict(message))
+
         # self.dialog_round += 1
         # self.history_len = response['usage']['total_tokens']
         return message['content']
@@ -151,7 +265,10 @@ class BuyerAgent(DialogAgent):
                 ):
         """Initialize the buyer agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, 
+                         engine=engine,
+                         api_key=api_key,
+                         )
         self.buyer_instruction = buyer_instruction
         self.buyer_init_price = buyer_init_price
         self.seller_init_price = seller_init_price
@@ -177,7 +294,9 @@ class BuyerAgent(DialogAgent):
         return
     
     def receive_feedback(self, feedback, previous_price):
-        """Receive and acknowledge feedback from the critic"""
+        """Receive and acknowledge feedback from the critic
+        Basically add the feedback message to the history and restart the bargaining
+        """
 
         # if the previous round is ended by the buyer, then add seller's acknowledgement
         if(self.dialog_history[-1]["role"] == "user"):
@@ -227,7 +346,10 @@ class SellerAgent(DialogAgent):
                 ):
         """Initialize the seller agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, 
+                         engine=engine,
+                         api_key=api_key
+                         )
         self.seller_init_price = seller_init_price
         self.buyer_init_price = buyer_init_price
         self.cost_price = cost_price
@@ -251,7 +373,9 @@ class SellerAgent(DialogAgent):
         return
     
     def receive_feedback(self, feedback, previous_price):
-        """Receive and acknowledge feedback from the critic"""
+        """Receive and acknowledge feedback from the critic
+        Basically add the feedback message to the history and restart the bargaining
+        """
 
         # if the previous round is ended by the buyer, then add seller's acknowledgement
         if(self.dialog_history[-1]["role"] == "user"):
@@ -293,7 +417,10 @@ class ModeratorAgent(DialogAgent):
                 ):
         """Initialize the moderator agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, 
+                         engine=engine,
+                         api_key=api_key
+                         )
 
         self.trace_n_history = trace_n_history
         print("Initializing moderator with engine %s" % self.engine)
@@ -325,18 +452,20 @@ class ModeratorAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-            
-        return response['choices'][0]['message']['content']
+        response = self.call_engine(messages)
+        # if(retry):
+        #     response = completion_with_backoff(
+        #                   model=self.engine,
+        #                   messages=messages
+        #                 )
+        # else:
+        #     response = openai.ChatCompletion.create(
+        #                 model=self.engine,
+        #                 messages=messages
+        #                 )
+        # return response['choices'][0]['message']['content']
+
+        return response['content']
     
 
 class SellerCriticAgent(DialogAgent):
@@ -350,12 +479,15 @@ class SellerCriticAgent(DialogAgent):
                 ):
         """Initialize the seller critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, 
+                         engine=engine,
+                         api_key=api_key
+                         )
 
         print("Initializing seller critic with engine %s" % self.engine)
         return
     
-    def criticize(self, seller_history, retry=True):
+    def criticize(self, seller_history):
         """Criticize the seller's negotiation strategy"""
         prompt = "\n"
         for d in seller_history[1:]:
@@ -369,17 +501,19 @@ class SellerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        # import ipdb; ipdb.set_trace()
+        response = self.call_engine(messages)
+        # if(retry):
+        #     response = completion_with_backoff(
+        #                   model=self.engine,
+        #                   messages=messages
+        #                 )
+        # else:
+        #     response = openai.ChatCompletion.create(
+        #                 model=self.engine,
+        #                 messages=messages
+        #                 )
+        feedback = response['content'].replace('\n\n', '\n')
         return feedback
     
 class BuyerCriticAgent(DialogAgent):
@@ -392,12 +526,15 @@ class BuyerCriticAgent(DialogAgent):
                 ):
         """Initialize the buyer critic agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
-                         agent_type=agent_type, engine=engine)
+                         agent_type=agent_type, 
+                         engine=engine,
+                         api_key=api_key
+                         )
 
         print("Initializing buyer critic with engine %s" % self.engine)
         return
     
-    def criticize(self, buyer_history, retry=True):
+    def criticize(self, buyer_history):
         prompt = "\n"
         for d in buyer_history[1:]:
             if(d["role"] == "user"):
@@ -409,15 +546,18 @@ class BuyerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
-        if(retry):
-            response = completion_with_backoff(
-                          model=self.engine,
-                          messages=messages
-                        )
-        else:
-            response = openai.ChatCompletion.create(
-                        model=self.engine,
-                        messages=messages
-                        )
-        feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        response = self.call_engine(messages)
+
+        # if(retry):
+        #     response = completion_with_backoff(
+        #                   model=self.engine,
+        #                   messages=messages
+        #                 )
+        # else:
+        #     response = openai.ChatCompletion.create(
+        #                 model=self.engine,
+        #                 messages=messages
+        #                 )
+        # feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
+        feedback = response['content'].replace('\n\n', '\n')
         return feedback

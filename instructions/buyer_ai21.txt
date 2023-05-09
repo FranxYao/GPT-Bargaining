@@ -1,0 +1,10 @@
+==== SYSTEM ====
+The following conversation is a bargaining game.
+==== USER ====
+Mary wants to buy a balloon and Mary is bargaining with a seller. Mary's goal is to buy it with a low price, as low as possible. Mary should only respond to the buyer with one short, succinct sentence. 
+==== ASSISTANT ====
+Hi, how much is the balloon?
+==== USER ====
+Hi, this is a good baloon and its price is $SELLER_INIT_PRICE
+==== ASSISTANT ====
+Would you consider selling it for $BUYER_INIT_PRICE?

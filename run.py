@@ -1,4 +1,5 @@
 import openai
+import ai21
 import re
 import time
 import json
@@ -12,7 +13,7 @@ from tqdm import tqdm
 from pprint import pprint
 from agent import (load_initial_instructions, involve_moderator, parse_final_price, 
     BuyerAgent, SellerAgent, ModeratorAgent, SellerCriticAgent, BuyerCriticAgent)
-from agent_claude import (ClaudeBuyer, ClaudeSeller, ClaudeSellerCritic, ClaudeBuyerCritic)
+# from agent_claude_prev import (ClaudeBuyer, ClaudeSeller, ClaudeSellerCritic, ClaudeBuyerCritic)
 
 CONST_CRITIC_PATH = "instructions/constant_feedback.txt"
 HUMAN_CRITIC_PATH = "instructions/human_feedback_seller.txt"
@@ -22,11 +23,15 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--seller_engine', type=str, default="gpt-3.5-turbo")
+parser.add_argument('--seller_instruction', type=str, default="seller")
+
 parser.add_argument('--seller_critic_engine', type=str, default="gpt-3.5-turbo")
+parser.add_argument('--seller_critic_instruction', type=str, default="seller_critic")
 
 parser.add_argument('--buyer_engine', type=str, default="gpt-3.5-turbo")
 parser.add_argument('--buyer_instruction', type=str, default="buyer",
                     help="[buyer, buyer_no_initial_price]")
+
 parser.add_argument('--buyer_critic_engine', type=str, default="gpt-3.5-turbo")
 parser.add_argument('--buyer_critic_instruction', type=str, default="buyer_critic",
                     help="[buyer_critic, buyer_critic_no_initial_price]")
@@ -34,13 +39,14 @@ parser.add_argument('--buyer_critic_instruction', type=str, default="buyer_criti
 parser.add_argument('--moderator_instruction', type=str, default="moderator_buyer",
                     help="[moderator_buyer, moderator_seller, moderator_buyer_reason_first]")
 parser.add_argument('--moderator_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--moderator_trace_n_history', type=int, default=2,
+parser.add_argument('--moderator_trace_n_history', type=int, default=5,
                     help="how long the moderator trace history")
 
-parser.add_argument('--verbose', type=int, default=1, help="0: not print, 1: print")
+parser.add_argument('--verbose', type=int, default=1, help="0: not logger.write, 1: logger.write")
 
 parser.add_argument('--api_key', type=str, default=None, help='openai api key')
 parser.add_argument('--anthropic_api_key', type=str, default=None, help='anthropic api key')
+parser.add_argument('--ai21_api_key', type=str, default=None, help='ai21 api key')
 
 parser.add_argument('--game_type', type=str, default=None, 
                     help='[criticize_seller, criticize_buyer, seller_compare_feedback]')
@@ -63,6 +69,7 @@ parser.add_argument('--game_version', type=str, default="test",
 args = parser.parse_args()
 
 openai.api_key = args.api_key
+ai21.api_key = args.ai21_api_key
 
 
 # define logging
@@ -76,27 +83,36 @@ def get_engine_api_key(agent_type, engine_name, args):
     agent_type: [seller, buyer, seller_critic, buyer_critic, moderator]
     engine_name: [gpt-3.5-turbo, gpt-4, claude-v1.0, claude-v1.3, claude-instant-v1.0]
     """
-    engine_map = {  "seller": {"gpt": SellerAgent, 
-                               "claude": ClaudeSeller}, 
-                    "buyer":  {"gpt": BuyerAgent, 
-                               "claude": ClaudeBuyer},
-                    "seller_critic": {"gpt": SellerCriticAgent, 
-                                      "claude": ClaudeSellerCritic},
-                    "buyer_critic":  {"gpt": BuyerCriticAgent,
-                                      "claude": ClaudeBuyerCritic},
-                    "moderator": {"gpt": ModeratorAgent}
+    # engine_map = {  "seller": {"gpt": SellerAgent, 
+    #                            "claude": ClaudeSeller}, 
+    #                 "buyer":  {"gpt": BuyerAgent, 
+    #                            "claude": ClaudeBuyer},
+    #                 "seller_critic": {"gpt": SellerCriticAgent, 
+    #                                   "claude": ClaudeSellerCritic},
+    #                 "buyer_critic":  {"gpt": BuyerCriticAgent,
+    #                                   "claude": ClaudeBuyerCritic},
+    #                 "moderator": {"gpt": ModeratorAgent}
+    #               }
+    engine_map = {  "seller": SellerAgent, 
+                    "buyer":  BuyerAgent, 
+                    "seller_critic": SellerCriticAgent, 
+                    "buyer_critic":  BuyerCriticAgent,
+                    "moderator": ModeratorAgent
                   }
-    
 
     if("gpt" in engine_name): 
-        engine_name = "gpt"
+        # engine_name = "gpt"
         api_key = args.api_key
     elif("claude" in engine_name): 
-        engine_name = "claude"
+        # engine_name = "claude"
         api_key = args.anthropic_api_key
-    else: raise ValueError("engine name not found")
+    elif("j2" in engine_name):
+        api_key = args.ai21_api_key
+    else: 
+        raise ValueError("engine name %s not found" % engine_name)
 
-    engine_class = engine_map[agent_type][engine_name]    
+    # engine_class = engine_map[agent_type][engine_name]    
+    engine_class = engine_map[agent_type]
 
     return engine_class, api_key
 
@@ -250,7 +266,7 @@ def run_compare_critic_single(buyer, seller, moderator, critic,
         buyer.reset()
         moderator.reset()
 
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         ai_feedback = critic.criticize(seller.dialog_history)
 
         
@@ -297,8 +313,10 @@ def run_compare_critic(args, buyer, seller, moderator, critic,
     """
     prices_ai_critic, prices_const_critic, prices_human_critic = [], [], []
 
-    for i in tqdm(range(n_exp)):
-        logger.write("==== CASE %d ====" % i)
+    start_time = time.time()
+    # for i in tqdm(range(n_exp)):
+    for i in range(n_exp):
+        logger.write("==== CASE %d / %d, %.2f min ====" % (i, n_exp, compute_time(start_time)))
         buyer.reset()
         seller.reset()
         moderator.reset()
@@ -373,8 +391,10 @@ def run_with_critic(args, buyer, seller, moderator, critic, game_type,
     """
     round_k_prices = {k: [] for k in range(n_rollout)}
 
-    for i in tqdm(range(n_exp)):
-        logger.write("==== CASE %d ====" % i)
+    # for i in tqdm(range(n_exp)):
+    start_time = time.time()
+    for i in range(n_exp):
+        logger.write("==== CASE %d / %d | %.2f min ====" % (i, n_exp, compute_time(start_time)))
         buyer.reset()
         seller.reset()
         moderator.reset()
@@ -394,8 +414,8 @@ def run_with_critic(args, buyer, seller, moderator, critic, game_type,
 
 def main(args):
     # seller init
-    seller_initial_dialog_history = load_initial_instructions('instructions/seller.txt')
-    print(args.seller_engine)
+    seller_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.seller_instruction)
+    # logger.write(args.seller_engine)
     seller_engine_class, seller_api_key = get_engine_api_key(engine_name=args.seller_engine,
                                                             agent_type="seller", args=args
                                                             )
@@ -431,7 +451,7 @@ def main(args):
     # critic init 
     if(args.game_type in ["criticize_seller", "seller_compare_feedback"]): 
          # seller critic init
-        seller_critic_initial_dialog_history = load_initial_instructions('instructions/seller_critic.txt')
+        seller_critic_initial_dialog_history = load_initial_instructions('instructions/%s.txt' % args.seller_critic_instruction)
         seller_critic_engine_class, seller_critic_api_key = get_engine_api_key(engine_name=args.seller_critic_engine,
                                                                                 agent_type="seller_critic", args=args
                                                                                 )

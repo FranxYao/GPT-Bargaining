@@ -1,4 +1,5 @@
 import sys
+import time
 
 def wprint(s, fd=None, verbose=True):
     if(fd is not None): fd.write(s + '\n')
@@ -18,11 +19,11 @@ class Logger(object):
     def flush(self):
         pass
 
-def reverse_identity(agent_type):
-    assert agent_type in ["buyer", "seller", "moderator", "critic"]
-    if(agent_type == "buyer"): return "seller"
-    elif(agent_type == "seller"): return "buyer"
-    else: return agent_type
+# def reverse_identity(agent_type):
+#     assert agent_type in ["buyer", "seller", "moderator", "critic"]
+#     if(agent_type == "buyer"): return "seller"
+#     elif(agent_type == "seller"): return "buyer"
+#     else: return agent_type
 
 def check_price_range(price, p_min=8, p_max=20):
     """check if one price is in legal range
@@ -58,3 +59,6 @@ def parse_outputs(filepath, price_per_case=4):
         assert(len(case_price) == price_per_case)
         prices.append(case_price)
     return prices
+
+def compute_time(start_time):
+    return (time.time() - start_time) / 60.0

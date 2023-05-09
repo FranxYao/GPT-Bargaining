@@ -13,8 +13,16 @@ def claude_completion_with_backoff(api, **kwargs):
     return api.completion(**kwargs)
 
 
-def gpt_to_claude_prompt(dialog_history):
-    return 
+def convert_openai_to_anthropic_prompt(prompt):
+    prompt_claude = "\n\nHuman: %s\n\n" % prompt[0]["content"] + "\n\n" + prompt[1]["content"]
+    for p in prompt[2:]:
+        if(p["role"] == "user"):
+            prompt_claude += '\n\nHuman: %s' % p["content"]
+        elif(p["role"] == "assistant"):
+            prompt_claude += '\n\nAssistant: %s' % p["content"]
+
+    prompt_claude += '\n\nAssistant:'
+    return prompt_claude
 
 class ClaudeAgent(DialogAgent):
     def __init__(self, 
@@ -42,14 +50,14 @@ class ClaudeAgent(DialogAgent):
         self.dialog_history = deepcopy(self.initial_dialog_history)
         return 
 
-def call(self, prompt):
+    def call(self, prompt):
         """Call the Claude agent to generate a response"""
         prompt = {"role": "user", "content": prompt}
         self.dialog_history.append(prompt)
         self.last_prompt = prompt['content']
         
         # Construct prompt for claude
-        claude_prompt = gpt_to_claude_prompt(self.dialog_history)
+        claude_prompt = convert_openai_to_anthropic_prompt(self.dialog_history)
         import ipdb; ipdb.set_trace()
         # TODO: check claude API 
         response = claude_completion_with_backoff(self.claude, 
@@ -102,7 +110,7 @@ class ClaudeBuyer(ClaudeAgent):
         return
 
     def receive_feedback(self, feedback, previous_price):
-        return 
+        raise NotImplementedError
 
 class ClaudeSeller(ClaudeAgent):
     def __init__(self, 
