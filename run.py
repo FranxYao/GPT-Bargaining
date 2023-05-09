@@ -20,62 +20,69 @@ HUMAN_CRITIC_PATH = "instructions/human_feedback_seller.txt"
 
 
 import argparse
-parser = argparse.ArgumentParser()
 
-parser.add_argument('--seller_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--seller_instruction', type=str, default="seller")
+def define_arguments():
+    parser = argparse.ArgumentParser()
 
-parser.add_argument('--seller_critic_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--seller_critic_instruction', type=str, default="seller_critic")
+    # seller arguments
+    parser.add_argument('--seller_engine', type=str, default="gpt-3.5-turbo")
+    parser.add_argument('--seller_instruction', type=str, default="seller")
 
-parser.add_argument('--buyer_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--buyer_instruction', type=str, default="buyer",
-                    help="[buyer, buyer_no_initial_price]")
+    parser.add_argument('--seller_critic_engine', type=str, default="gpt-3.5-turbo")
+    parser.add_argument('--seller_critic_instruction', type=str, default="seller_critic")
 
-parser.add_argument('--buyer_critic_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--buyer_critic_instruction', type=str, default="buyer_critic",
-                    help="[buyer_critic, buyer_critic_no_initial_price]")
+    # buyer arguments
+    parser.add_argument('--buyer_engine', type=str, default="gpt-3.5-turbo")
+    parser.add_argument('--buyer_instruction', type=str, default="buyer",
+                        help="[buyer, buyer_no_initial_price]")
 
-parser.add_argument('--moderator_instruction', type=str, default="moderator_buyer",
-                    help="[moderator_buyer, moderator_seller, moderator_buyer_reason_first]")
-parser.add_argument('--moderator_engine', type=str, default="gpt-3.5-turbo")
-parser.add_argument('--moderator_trace_n_history', type=int, default=5,
-                    help="how long the moderator trace history")
+    parser.add_argument('--buyer_critic_engine', type=str, default="gpt-3.5-turbo")
+    parser.add_argument('--buyer_critic_instruction', type=str, default="buyer_critic",
+                        help="[buyer_critic, buyer_critic_no_initial_price]")
 
-parser.add_argument('--verbose', type=int, default=1, help="0: not logger.write, 1: logger.write")
+    # moderator arguments
+    parser.add_argument('--moderator_instruction', type=str, default="moderator_buyer",
+                        help="[moderator_buyer, moderator_seller, moderator_buyer_reason_first]")
+    parser.add_argument('--moderator_engine', type=str, default="gpt-3.5-turbo")
+    parser.add_argument('--moderator_trace_n_history', type=int, default=5,
+                        help="how long the moderator trace history")
 
-parser.add_argument('--api_key', type=str, default=None, help='openai api key')
-parser.add_argument('--anthropic_api_key', type=str, default=None, help='anthropic api key')
-parser.add_argument('--ai21_api_key', type=str, default=None, help='ai21 api key')
+    # api keys
+    parser.add_argument('--api_key', type=str, default=None, help='openai api key')
+    parser.add_argument('--anthropic_api_key', type=str, default=None, help='anthropic api key')
+    parser.add_argument('--ai21_api_key', type=str, default=None, help='ai21 api key')
 
-parser.add_argument('--game_type', type=str, default=None, 
-                    help='[criticize_seller, criticize_buyer, seller_compare_feedback]')
-parser.add_argument('--n_exp', type=int, default=1, 
-                    help='number of experiments')
-parser.add_argument('--n_round', type=int, default=10, 
-                    help='number of rounds')
-parser.add_argument('--n_rollout', type=int, default=3, 
-                    help='number of rollout')
-parser.add_argument('--cost_price', type=int, default=8, 
-                    help='Cost of the baloon')
-parser.add_argument('--seller_init_price', type=int, default=20, 
-                    help='initial seller price')
-parser.add_argument('--buyer_init_price', type=int, default=10, 
-                    help='initial buyer price')
-parser.add_argument('--output_path', type=str, default="./outputs/", 
-                    help='path to save the output')
-parser.add_argument('--game_version', type=str, default="test", 
-                    help='version to record the game')
-args = parser.parse_args()
+    parser.add_argument('--game_type', type=str, default=None, 
+                        help='[criticize_seller, criticize_buyer, seller_compare_feedback]')
+    parser.add_argument('--n_exp', type=int, default=1, 
+                        help='number of experiments')
+    parser.add_argument('--n_round', type=int, default=10, 
+                        help='number of rounds')
+    parser.add_argument('--n_rollout', type=int, default=3, 
+                        help='number of rollout')
+    parser.add_argument('--cost_price', type=int, default=8, 
+                        help='Cost of the baloon')
+    parser.add_argument('--seller_init_price', type=int, default=20, 
+                        help='initial seller price')
+    parser.add_argument('--buyer_init_price', type=int, default=10, 
+                        help='initial buyer price')
 
-openai.api_key = args.api_key
-ai21.api_key = args.ai21_api_key
+    parser.add_argument('--verbose', type=int, default=1, help="0: not logger.write, 1: logger.write")
+    parser.add_argument('--output_path', type=str, default="./outputs/", 
+                        help='path to save the output')
+    parser.add_argument('--ver', type=str, default="test", 
+                        help='version to record the game')
+    parser.add_argument('--game_version', type=str, default="test", 
+                        help='version plus arguments')
 
+    args = parser.parse_args()
+
+    openai.api_key = args.api_key
+    ai21.api_key = args.ai21_api_key
+    return args
 
 # define logging
 from utils import * 
-logger = Logger(args.output_path + args.game_version + ".txt", args.verbose)
-
 
 # load engine mapping
 def get_engine_api_key(agent_type, engine_name, args):
@@ -316,7 +323,7 @@ def run_compare_critic(args, buyer, seller, moderator, critic,
     start_time = time.time()
     # for i in tqdm(range(n_exp)):
     for i in range(n_exp):
-        logger.write("==== CASE %d / %d, %.2f min ====" % (i, n_exp, compute_time(start_time)))
+        logger.write("==== ver %s CASE %d / %d, %.2f min ====" % (args.ver, i, n_exp, compute_time(start_time)))
         buyer.reset()
         seller.reset()
         moderator.reset()
@@ -394,7 +401,7 @@ def run_with_critic(args, buyer, seller, moderator, critic, game_type,
     # for i in tqdm(range(n_exp)):
     start_time = time.time()
     for i in range(n_exp):
-        logger.write("==== CASE %d / %d | %.2f min ====" % (i, n_exp, compute_time(start_time)))
+        logger.write("==== ver %s CASE %d / %d | %.2f min ====" % (args.ver, i, n_exp, compute_time(start_time)))
         buyer.reset()
         seller.reset()
         moderator.reset()
@@ -494,4 +501,6 @@ def main(args):
     return 
 
 if __name__ == "__main__":
+    args = define_arguments()
+    logger = Logger(args.output_path + args.game_version + ".txt", args.verbose)
     main(args)

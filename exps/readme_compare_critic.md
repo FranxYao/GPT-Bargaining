@@ -102,4 +102,31 @@ nohup python run.py\
     --game_version=${game_version}\
     &> outputs/${game_version}.log & 
 tail -f outputs/${game_version}.log
+
+# compare different feedbacks, Claude-v1.3
+api_key=
+anthropic_api_key=
+game_type=seller_compare_feedback
+moderator_instruction=moderator_reason_multi_history
+seller_engine=claude-v1.3                 
+seller_critic_engine=claude-v1.3          
+moderator_engine=gpt-3.5-turbo
+verbose=1
+n_exp=500
+n_round=10
+ver=1.13.0
+game_version=${game_type}_${n_exp}_runs_ver_${ver}
+python run.py\
+    --api_key=${api_key}\
+    --anthropic_api_key=${anthropic_api_key}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_exp=${n_exp}\
+    --seller_engine=${seller_engine}\
+    --seller_critic_engine=${seller_critic_engine}\
+    --moderator_engine=${moderator_engine}\
+    --moderator_instruction=${moderator_instruction}\
+    --ver=${ver}\
+    --game_version=${game_version}
 ```

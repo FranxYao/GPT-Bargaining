@@ -23,6 +23,7 @@ def claude_completion_with_backoff(api, **kwargs):
     """Claude API wrapper, if network error then retry 3 times"""
     return api.completion(**kwargs)
 
+
 @retry(stop=stop_after_attempt(3), 
        wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
                        [wait_fixed(5) for i in range(1)]))
@@ -62,7 +63,7 @@ def convert_openai_to_ai21_prompt_format_1(prompt, agent_type="buyer"):
 
 def convert_openai_to_ai21_prompt_format_2(prompt, agent_type="buyer"):
     """Convert OpenAI API format to AI21 format"""
-    prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"]
+    # prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"]
 
     # if(agent_type == "seller"): counterpart = "Buyer"
     # elif(agent_type == "buyer"): counterpart = "Seller"
