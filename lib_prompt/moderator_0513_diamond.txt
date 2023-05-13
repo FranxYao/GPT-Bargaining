@@ -3,66 +3,6 @@ Now enter the role-playing mode. In the following conversation, you will play as
 ==== USER ====
 Let's play a game. You are the moderator of a bargaining game. Your role is to decide if a seller and a buyer have reached a deal during the bargaining following the example:
 
-buyer: Thank you for your offer, but I was hoping to spend a little bit less. How about I purchase two diamonds and you give me a discount?
-seller: Certainly, I can offer you a 10% discount if you purchase two diamonds. That would bring the price of two diamonds down to $36.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer did not confirm. The answer is No. 
-
-buyer: I see. Would you consider selling it for $18 with free delivery?
-seller: As this is a limited edition diamond, I can go as low as $19 with free delivery.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer did not confirm. The answer is No. 
-
-buyer: I understand. Is there any way you could lower the price a bit more? I really like the diamond, but my budget is tight.
-seller: I can offer you a discount of $2, so you can purchase it for $16.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer did not confirm. The answer is No.
-
-buyer: Thank you for the offer, but I only need one diamond. Could you perhaps sell me this diamond for $15?
-seller: I can meet you halfway and offer you this diamond for $17.50.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: Thank you for letting me know. Based on the diamond's condition, would you be willing to sell it for $13?
-seller: I can compromise with you and leave it for $14.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: I understand, thank you for letting me know. If I may ask, is there anything we can negotiate on besides the price?
-seller: Unfortunately, the price is non-negotiable, but I can give you some extra diamonds, free of charge as a token of my appreciation for your interest.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: I see, I appreciate your honesty. Is there any chance you could include a free diamond pump with the purchase?
-seller: I can include a free diamond pump with the purchase if you agree to buy the diamond for $15.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: I understand. Can we negotiate on the price? What's the lowest price you can offer?
-seller: The lowest I can go is $15 for this diamond.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: I appreciate your offer, but I'm afraid it's still a bit too high for me. Would you consider maybe throwing in a pack of diamonds or something to sweeten the deal if I were to purchase this diamond from you?
-seller: I can throw in a pack of small diamonds if you buy the diamond for $16.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-seller: I appreciate your offer but I cannot go that low, My final offer is $16.
-buyer: I understand. Can I get any extra diamonds with the current one if I agree to your final offer of $16?
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the seller have not agreed yet. The answer is No
-
-buyer: That sounds like a good deal. So if I pay in cash, that would bring the price down to $18?
-seller: Actually, if you pay in cash I could lower the price to $13.50.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not agreed yet. The answer is No
-
-buyer: Thank you for your kind offer. Do you think you could lower the price a bit more?
-seller: I can do $15 for you as the final price.
-question: have the seller and the buyer achieved a deal? Yes or No
-answer: Because the buyer have not confirmed yet. The answer is No
-
 buyer: I understand, but I was wondering if there are any features of the diamond that I could get for a slightly lower price?
 seller: I can give you a free ribbon to go with it for $15.
 question: have the seller and the buyer achieved a deal? Yes or No
@@ -146,11 +86,17 @@ buyer: If you give me this diamond for $13, I'll make sure to recommend your sto
 question: have the seller and the buyer achieved a deal? Yes or No
 answer: Because the seller have not yet agreed. The answer is No
 
-seller: Hi, this is a good baloon and its price is $20
+seller: Hi, this is a good balloon and its price is $20
 buyer: Would you consider selling it for $10?
 seller: I'm sorry, I cannot do that.
 buyer: I've seen similar diamonds for $8 at another store; can you match that price?
 seller: I understand, but the price is firm at $20.
 buyer: If you sell it to me for $12, I'll recommend you to my friends and family for their diamond needs.
 question: have the seller and the buyer achieved a deal? Yes or No
+answer: Because the seller have not yet agreed. The answer is No
+
+seller: I apologize but $1000 is far too low for a diamond of this quality. My price is $2000, not a penny less.
+buyer: $1500. Final offer.
+seller: I cannot go that low. This diamond is worth much more, especially given its perfect clarity and color. $1800 is the lowest I can consider.
+buyer: $1600 and deal.
 answer: Because the seller have not yet agreed. The answer is No

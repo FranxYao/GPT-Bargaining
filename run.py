@@ -23,9 +23,12 @@ import argparse
 def define_arguments():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--item', type=str, default="balloon")
+
     # seller arguments
     parser.add_argument('--seller_engine', type=str, default="gpt-3.5-turbo")
     parser.add_argument('--seller_instruction', type=str, default="seller")
+    parser.add_argument('--seller_feedback_instruction', type=str, default="seller_receive_feedback")
 
     parser.add_argument('--seller_critic_engine', type=str, default="gpt-3.5-turbo")
     parser.add_argument('--seller_critic_instruction', type=str, default="seller_critic")
@@ -62,10 +65,14 @@ def define_arguments():
     parser.add_argument('--n_rollout', type=int, default=3, 
                         help='number of rollout')
     parser.add_argument('--cost_price', type=int, default=8, 
-                        help='Cost of the baloon')
+                        help='Cost of the balloon')
     parser.add_argument('--seller_init_price', type=int, default=20, 
                         help='initial seller price')
     parser.add_argument('--buyer_init_price', type=int, default=10, 
+                        help='initial buyer price')
+    parser.add_argument('--who_is_first', type=str, default="seller", 
+                        help='initial buyer price')
+    parser.add_argument('--restrict_price', type=str, default="true", 
                         help='initial buyer price')
 
     parser.add_argument('--verbose', type=int, default=1, help="0: not logger.write, 1: logger.write")
@@ -116,15 +123,19 @@ def run(buyer, seller, moderator,
         n_round=10, who_is_first="seller", no_deal_thres=10):
     """Run single game.
     """
-    
+    import ipdb; ipdb.set_trace()
     if(who_is_first == "buyer"):
+        logger.write('  buyer: %s' % buyer.last_response)
+        logger.write('  seller: %s' % seller.last_response)
+        logger.write('---- start bargaining ----')
         seller_run = seller.last_response
         buyer_run = buyer.call(seller_run)
+        logger.write('  buyer: %s' % buyer.last_response)
+    else:
+        logger.write('  seller: %s' % seller.last_response)
+        logger.write('  buyer: %s' % buyer.last_response)
+        logger.write('---- start bargaining ----')
 
-    logger.write('  seller: %s' % seller.last_response)
-    logger.write('  buyer: %s' % buyer.last_response)
-    
-    logger.write('---- start bargaining ----')
     buyer_run = buyer.last_response
     start_involve_moderator = False
     deal_at = "none"
@@ -306,6 +317,8 @@ def run_w_critic_rollout(args, buyer, seller, moderator, critic, game_type,
     """Run multiple rounds of bargaining with one single critic
     """
     logger.write('==== RUN 1 ====')
+    # import ipdb; ipdb.set_trace()
+
     buyer.reset()
     seller.reset()
     moderator.reset()
@@ -327,20 +340,21 @@ def run_w_critic_rollout(args, buyer, seller, moderator, critic, game_type,
         if(game_type == "criticize_seller"):
             ai_feedback = critic.criticize(seller.dialog_history)
             logger.write("FEEDBACK:\n%s\n\n" % ai_feedback)
-            acknowledgement = seller.receive_feedback(ai_feedback, previous_price)
+            acknowledgement, who_is_next = seller.receive_feedback(ai_feedback, previous_price)
             logger.write("ACK:\n%s\n\n" % acknowledgement)
         elif(game_type == "criticize_buyer"):
             ai_feedback = critic.criticize(buyer.dialog_history)
             logger.write("FEEDBACK:\n%s\n\n" % ai_feedback)
-            acknowledgement = buyer.receive_feedback(ai_feedback, previous_price)
+            # TODO: update who is first based on response from feedback
+            acknowledgement, who_is_next = buyer.receive_feedback(ai_feedback, previous_price)
             logger.write("ACK:\n%s\n\n" % acknowledgement)
         else: raise ValueError("game_type must be either 'critize_seller' or 'critize_buyer'")
         
         logger.write('==== RUN %d ====' % (i + 2))
-        run_i_price = run(buyer, seller, moderator, n_round=n_round, who_is_first=who_is_first)
+        run_i_price = run(buyer, seller, moderator, n_round=n_round, who_is_first=who_is_next)
         logger.write('PRICE: %s' % run_i_price)
 
-        if(check_price_range(
+        if(args.restrict_price == "true" and check_price_range(
             run_i_price, p_min=args.buyer_init_price, p_max=args.seller_init_price) == False
             ):
             logger.write("run %d did not get a deal, stop unroll" % (i + 2))
@@ -391,8 +405,11 @@ def main(args):
     seller_engine_class, seller_api_key = get_engine_and_api_key(engine_name=args.seller_engine,
                                                             agent_type="seller", args=args
                                                             )
+    feedback_instruction = open('lib_prompt/%s.txt' % args.seller_feedback_instruction).read()
     seller = seller_engine_class(initial_dialog_history=seller_initial_dialog_history, 
+                                 item=args.item,
                                 agent_type="seller", engine=args.seller_engine, api_key=seller_api_key,
+                                feedback_instruction=feedback_instruction,
                                 cost_price=args.cost_price, 
                                 buyer_init_price=args.buyer_init_price,
                                 seller_init_price=args.seller_init_price
@@ -404,6 +421,7 @@ def main(args):
                                                             agent_type="buyer", args=args
                                                             )
     buyer = buyer_engine_class(initial_dialog_history=buyer_initial_dialog_history, 
+                               item=args.item,
                                 agent_type="buyer", engine=args.buyer_engine, api_key=buyer_api_key,
                                 buyer_instruction=args.buyer_instruction,
                                 buyer_init_price=args.buyer_init_price,
@@ -444,15 +462,16 @@ def main(args):
     elif(args.game_type == "run_simple"): pass
     else: raise ValueError("game_type must be in ['criticize_seller', 'criticize_buyer', 'seller_compare_feedback', 'run_simple']")
 
-    # run
-    who_is_first = "seller"
-    if(args.buyer_instruction == "buyer_no_initial_price"): who_is_first = "buyer"
+    # # run
+    # who_is_first = "seller"
+    # # TODO: update this argument because it is confusing
+    # if(args.buyer_instruction == "buyer_no_initial_price"): who_is_first = "buyer"
 
     if(args.game_type in ["criticize_seller", "criticize_buyer"]):
         run_with_critic(args, buyer, seller, moderator, critic, 
                                 game_type=args.game_type, n_exp=args.n_exp, 
                                 n_rollout=args.n_rollout, n_round=args.n_round,
-                                who_is_first=who_is_first)
+                                who_is_first=args.who_is_first)
     elif(args.game_type == "seller_compare_feedback"):
         const_feedback = open(CONST_CRITIC_PATH).read().strip()
         human_feedback_pool = open(HUMAN_CRITIC_PATH).read().strip().split("\n")
@@ -460,7 +479,7 @@ def main(args):
                             const_feedback, human_feedback_pool, 
                             game_type=args.game_type, n_exp=args.n_exp, 
                             n_round=args.n_round,
-                            who_is_first=who_is_first)
+                            who_is_first=args.who_is_first)
     elif(args.game_type == "run_simple"):
         run_simple(args, buyer, seller, moderator, n_exp=args.n_exp)
     return 

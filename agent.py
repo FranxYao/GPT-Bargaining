@@ -9,6 +9,7 @@ from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
 from lib_api import *
+from utils import parse_feedback
 # from local.azure import azure_completion_with_backoff
 
 def load_initial_instructions(path_to_instructions):
@@ -300,7 +301,8 @@ class SellerAgent(DialogAgent):
                  cost_price=10,
                  buyer_init_price=10,
                  seller_init_price=20,
-                 item="balloon"
+                 item="balloon",
+                 feedback_instruction="",
                 ):
         """Initialize the seller agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
@@ -312,6 +314,7 @@ class SellerAgent(DialogAgent):
         self.seller_init_price = seller_init_price
         self.buyer_init_price = buyer_init_price
         self.cost_price = cost_price
+        self.feedback_instruction = feedback_instruction
 
         print("Initializing seller with engine %s" % self.engine)
 
@@ -339,30 +342,20 @@ class SellerAgent(DialogAgent):
         # if the previous round is ended by the buyer, then add seller's acknowledgement
         if(self.dialog_history[-1]["role"] == "user"):
             self.dialog_history.append({"role": "assitent", "content": "Sure, happy to do business with you."})
-        
-        # add the feedback from the critic
-        feedback_prefix = "Well done in your last round. "
-        feedback_prefix += "Here is the feedback from the critic:\n\n"
-        feedback = feedback_prefix + feedback + "\n\n"
-        feedback += "Now let's start the next round. "
-        feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
-        feedback += "Your goal is to sell the %s at at higher price than the previous round, i.e., higher than $%s." %\
-                    (self.item, str(previous_price))
-        prompt = {"role": "user", "content": feedback}
-        self.dialog_history.append(prompt)
 
-        # add the seller's acknowledgement
-        acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
-        acknowledgement += " And I will try to sell it at a higher price (higher than $%s) than the previous round." % str(previous_price)
-        prompt = {"role": "assistant", "content": acknowledgement}
-        self.dialog_history.append(prompt)
+        feedback_instruction = self.feedback_instruction.replace("SELLER_CRITIC_FEEDBACK", feedback)
+        feedback_instruction = feedback_instruction.replace("ITEM_NAME", self.item)
+        feedback_instruction = feedback_instruction.replace("PREVIOUS_PRICE", str(previous_price))
 
-        # restart the bargaining 
-        prompt = {"role": "user", "content": "Hi, how much is the %s?" % self.item}
-        self.dialog_history.append(prompt)
-        prompt = {"role": "assistant", "content": "Hi, this is a good %s and its price is $%d" % (self.item, self.seller_init_price)}
-        self.dialog_history.append(prompt)
-        return acknowledgement
+        new_dialog_history, acknowledgement = parse_feedback(feedback_instruction)
+        self.dialog_history.extend(new_dialog_history)
+
+        if(self.dialog_history[-1]["role"] == "user"):
+            who_is_next = "buyer"
+        else: 
+            who_is_next = "seller"
+        # import ipdb; ipdb.set_trace()
+        return acknowledgement, who_is_next
 
 class ModeratorAgent(DialogAgent):
     """NOTE: initial experiments shows that the moderator is much better at recognizing deal than not deal
@@ -449,6 +442,7 @@ class SellerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
+        # import ipdb; ipdb.set_trace()
         response = self.call_engine(messages)
         feedback = response['content'].replace('\n\n', '\n')
         return feedback

@@ -84,3 +84,26 @@ def parse_outputs_v2(filepath, price_per_case=4):
 
 def compute_time(start_time):
     return (time.time() - start_time) / 60.0
+
+def parse_feedback(feedback_message):
+    new_dialog_history = []
+    gather_acknowledgement = False
+    for l in feedback_message.split("\n"):
+        if(l.startswith("==== CRITIC ====")):
+            msg = {"role": "user", "content": ""}
+        elif(l.startswith("==== ACKNOWLEDGEMENT ====")):
+            critic_msg = msg["content"]
+            acknowledgement = ""
+            gather_acknowledgement = True
+            new_dialog_history.append(msg)
+            msg = {"role": "assistant", "content": ""}
+        elif(l.startswith("==== USER ====")):
+            gather_acknowledgement = False
+            acknowledgement = msg["content"]
+            new_dialog_history.append(msg)
+            msg = {"role": "user", "content": ""}
+        else:
+            msg["content"] += l + "\n"
+            if(gather_acknowledgement): acknowledgement += l + "\n"
+    new_dialog_history.append(msg)
+    return new_dialog_history, acknowledgement
