@@ -9,7 +9,7 @@ from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
 from lib_api import *
-
+from local.azure import azure_completion_with_backoff
 
 def load_initial_instructions(path_to_instructions):
     """Load initial instructions from textual format to a python dict"""
@@ -116,7 +116,10 @@ class DialogAgent(object):
 
     def call_engine(self, messages):
         """Route the call to different engines"""
-        if("gpt" in self.engine):
+        if("azure" in self.engine):
+            response = azure_completion_with_backoff(messages=messages)
+            message = response['choices'][0]['message']
+        elif("gpt" in self.engine):
             # import ipdb; ipdb.set_trace()
             response = completion_with_backoff(
                           model=self.engine,

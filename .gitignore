@@ -9,3 +9,4 @@ logs
 processed_data
 checkpoints/
 BIG-Bench-Hard/
+local/

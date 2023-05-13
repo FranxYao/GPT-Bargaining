@@ -95,4 +95,29 @@ python run.py\
     --moderator_instruction=${moderator_instruction}\
     --ver=${ver}\
     --game_version=${game_version} 
+
+# GPT-4 criticize seller, unroll 5
+api_key=
+game_type=criticize_seller
+moderator_instruction=moderator_0509
+verbose=1
+n_round=10
+n_rollout=5
+n_exp=2
+ver=0.3.4.0
+seller_engine=azure_gpt_4
+seller_critic_engine=azure_gpt_4
+game_version=${game_type}_${n_exp}_runs_${n_rollout}_rollout_ver_${ver}
+python run.py\
+    --api_key=${api_key}\
+    --seller_engine=${seller_engine}\
+    --seller_critic_engine=${seller_critic_engine}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_exp=${n_exp}\
+    --n_rollout=${n_rollout}\
+    --moderator_instruction=${moderator_instruction}\
+    --ver=${ver}\
+    --game_version=${game_version} 
 ```
