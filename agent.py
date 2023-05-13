@@ -2,84 +2,13 @@ import openai
 import anthropic
 import ai21
 import re 
+import cohere
 
 from copy import deepcopy
 from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
-
-@retry(stop=stop_after_attempt(3), 
-        wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
-                       [wait_fixed(5) for i in range(1)]))
-def completion_with_backoff(**kwargs):
-    """OpenAI API wrapper, if network error then retry 3 times"""
-    return openai.ChatCompletion.create(**kwargs)
-
-
-@retry(stop=stop_after_attempt(3), 
-       wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
-                       [wait_fixed(5) for i in range(1)]))
-def claude_completion_with_backoff(api, **kwargs):
-    """Claude API wrapper, if network error then retry 3 times"""
-    return api.completion(**kwargs)
-
-
-@retry(stop=stop_after_attempt(3), 
-       wait=wait_chain(*[wait_fixed(3) for i in range(2)] +
-                       [wait_fixed(5) for i in range(1)]))
-def ai21_completion_with_backoff(**kwargs):
-    """AI21 API wrapper, if network error then retry 3 times"""
-    return ai21.Completion.execute(**kwargs)
-
-
-def convert_openai_to_anthropic_prompt(prompt):
-    """Convert OpenAI API format to Claude format"""
-    prompt_claude = "\n\nHuman: %s\n\n" % prompt[0]["content"] + "\n\n" + prompt[1]["content"]
-    for p in prompt[2:]:
-        if(p["role"] == "user"):
-            prompt_claude += '\n\nHuman: %s' % p["content"]
-        elif(p["role"] == "assistant"):
-            prompt_claude += '\n\nAssistant: %s' % p["content"]
-
-    prompt_claude += '\n\nAssistant:'
-    return prompt_claude
-
-def convert_openai_to_ai21_prompt_format_1(prompt, agent_type="buyer"):
-    """Convert OpenAI API format to AI21 format"""
-    prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"] + "\n\n##\n"
-
-    # if(agent_type == "seller"): counterpart = "Buyer"
-    # elif(agent_type == "buyer"): counterpart = "Seller"
-    # else: pass 
-    
-    for p in prompt[2:]:
-        if(p["role"] == "user"):
-            prompt_ai21 += '\n\nUser: %s\n\n##' % (p["content"])
-        elif(p["role"] == "assistant"):
-            prompt_ai21 += '\n\nMary: %s\n\n##' % p["content"]
-
-    prompt_ai21 += "\n\nMary:"
-    return prompt_ai21
-
-def convert_openai_to_ai21_prompt_format_2(prompt, agent_type="buyer"):
-    """Convert OpenAI API format to AI21 format"""
-    # prompt_ai21 = prompt[0]["content"] + "\n\n" + prompt[1]["content"]
-
-    # if(agent_type == "seller"): counterpart = "Buyer"
-    # elif(agent_type == "buyer"): counterpart = "Seller"
-    # else: pass 
-    
-    # for p in prompt[2:]:
-    #     if(p["role"] == "user"):
-    #         prompt_ai21 += '\n\n%s: %s' % (counterpart, p["content"])
-    #     elif(p["role"] == "assistant"):
-    #         prompt_ai21 += '\n\nMary: %s' % p["content"]
-
-    # prompt_ai21 += "\n\nMary:"
-    return prompt_ai21
-
-def convert_openai_to_cohere_prompt(prompt):
-    raise NotImplementedError("Cohere API is not implemented yet")
+from lib_api import *
 
 
 def load_initial_instructions(path_to_instructions):
@@ -162,6 +91,14 @@ class DialogAgent(object):
 
         if("claude" in self.engine):
             self.claude = anthropic.Client(self.api_key)
+        if("cohere" in self.engine):
+            assert self.engine in ["cohere-command-nightly", 
+                                   "cohere-command", 
+                                   "cohere-command-light", 
+                                   "cohere-command-light-nightly"
+                                   ]
+            self.cohere_model = self.engine[7:]
+            self.co = cohere.Client(api_key)
 
         if(initial_dialog_history is None):
             self.dialog_history = [{"role": "system", "content": system_instruction}]
@@ -216,7 +153,18 @@ class DialogAgent(object):
                        "content": content
                        }
         elif("cohere" in self.engine):
-            raise NotImplementedError("Cohere API is not implemented yet")
+            prompt_cohere = convert_openai_to_cohere_prompt(messages)
+            # import ipdb; ipdb.set_trace()
+            response = cohere_completion_with_backoff(self.co,
+                                                      prompt=prompt_cohere,
+                                                      model=self.cohere_model,
+                                                      max_tokens=512,
+                                                      )
+            
+            # import ipdb; ipdb.set_trace()
+            message = {"role": "assistant", 
+                       "content": response[0].text
+                       }
         else:
             raise ValueError("Unknown engine %s" % self.engine)
         return message
@@ -547,6 +495,7 @@ class BuyerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
+        # import ipdb; ipdb.set_trace()
         response = self.call_engine(messages)
 
         # if(retry):

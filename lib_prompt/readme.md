@@ -1,8 +1,6 @@
-# Instruction Library for different agents
+# Prompt Library for different agents
 
-Buyer
-
-Seller
+All prompts are formated using ChatGPT's format. When actually prompting we modify the prompt according to the underlying engine. 
 
 Hardest one is the moderator
 * moderator_seller.txt -- moderator used when criticizing seller

@@ -1,2 +1,5 @@
 openai
-anthropic 
+anthropic
+ai21
+tenacity
+cohere

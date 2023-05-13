@@ -129,4 +129,32 @@ python run.py\
     --moderator_instruction=${moderator_instruction}\
     --ver=${ver}\
     --game_version=${game_version}
+
+
+# compare different feedbacks, Cohere command
+api_key=
+cohere_api_key=
+game_type=run_simple
+seller_engine=cohere-command-nightly
+seller_critic_engine=cohere-command-nightly
+moderator_instruction=moderator_0511_cohere
+moderator_engine=gpt-3.5-turbo
+verbose=1
+n_exp=3
+n_round=10
+ver=1.15.0
+game_version=${game_type}_${n_exp}_runs_ver_${ver}
+python run.py\
+    --api_key=${api_key}\
+    --cohere_api_key=${cohere_api_key}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_exp=${n_exp}\
+    --seller_engine=${seller_engine}\
+    --seller_critic_engine=${seller_critic_engine}\
+    --moderator_engine=${moderator_engine}\
+    --moderator_instruction=${moderator_instruction}\
+    --ver=${ver}\
+    --game_version=${game_version}
 ```

@@ -56,7 +56,7 @@ python run.py\
     --game_version=${game_version}
 
 
-# criticize buyer, change buyer and critic engine to be claude-v1.3
+# criticize seller, change seller and critic engine to be claude-v1.3
 api_key=
 anthropic_api_key=
 game_type=criticize_seller
@@ -107,6 +107,62 @@ python run.py\
     --n_exp=${n_exp}\
     --buyer_engine=${buyer_engine}\
     --buyer_critic_engine=${buyer_critic_engine}\
+    --moderator_engine=${moderator_engine}\
+    --moderator_instruction=${moderator_instruction}\
+    --ver=${ver}\
+    --game_version=${game_version}
+
+# criticize buyer, enginer change to claude-instant-v1.0
+api_key=
+anthropic_api_key=
+game_type=criticize_buyer
+moderator_instruction=moderator_reason_multi_history
+buyer_engine=claude-instant-v1.0
+buyer_critic_engine=claude-instant-v1.0
+moderator_engine=gpt-3.5-turbo
+verbose=1
+n_round=10
+n_rollout=2
+n_exp=500
+ver=0.2.0.0
+game_version=${game_type}_${n_exp}_runs_rollout_${n_rollout}_ver_${ver}
+python run.py\
+    --api_key=${api_key}\
+    --anthropic_api_key=${anthropic_api_key}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_rollout=${n_rollout}\
+    --n_exp=${n_exp}\
+    --buyer_engine=${buyer_engine}\
+    --buyer_critic_engine=${buyer_critic_engine}\
+    --moderator_engine=${moderator_engine}\
+    --moderator_instruction=${moderator_instruction}\
+    --ver=${ver}\
+    --game_version=${game_version}
+
+# criticize seller, enginer change to claude-instant-v1.0
+game_type=criticize_seller
+moderator_instruction=moderator_reason_multi_history
+seller_engine=claude-instant-v1.0
+seller_critic_engine=claude-instant-v1.0
+moderator_engine=gpt-3.5-turbo
+verbose=1
+n_round=10
+n_rollout=2
+n_exp=500
+ver=0.2.1.0
+game_version=${game_type}_${n_exp}_runs_rollout_${n_rollout}_ver_${ver}
+python run.py\
+    --api_key=${api_key}\
+    --anthropic_api_key=${anthropic_api_key}\
+    --game_type=${game_type}\
+    --verbose=${verbose}\
+    --n_round=${n_round}\
+    --n_rollout=${n_rollout}\
+    --n_exp=${n_exp}\
+    --seller_engine=${seller_engine}\
+    --seller_critic_engine=${seller_critic_engine}\
     --moderator_engine=${moderator_engine}\
     --moderator_instruction=${moderator_instruction}\
     --ver=${ver}\

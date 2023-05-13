@@ -12,6 +12,9 @@ class Logger(object):
         self.log = open(log_file, "w")
         self.verbose = verbose
 
+        self.write("All outputs written to %s" % log_file)
+        return 
+
     def write(self, message):
         self.log.write(message + '\n')
         if(self.verbose): self.terminal.write(message + '\n')
@@ -57,6 +60,25 @@ def parse_outputs(filepath, price_per_case=4):
 
     if(len(case_price) > 0): 
         assert(len(case_price) == price_per_case)
+        prices.append(case_price)
+    return prices
+
+def parse_outputs_v2(filepath, price_per_case=4):
+    prices = []
+    lines = open(filepath).readlines()
+    case_price = []
+    for l in lines:
+        if(l.startswith("==== ver")):
+            if(len(case_price) > 0): 
+                # assert(len(case_price) == price_per_case)
+                prices.append(case_price)
+            case_price = []
+        elif(l.startswith("PRICE: ")):
+            price = float(l.split('PRICE: ')[1].strip())
+            case_price.append(price)
+
+    if(len(case_price) > 0): 
+        # assert(len(case_price) == price_per_case)
         prices.append(case_price)
     return prices
 
