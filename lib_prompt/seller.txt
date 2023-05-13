@@ -7,4 +7,4 @@ Yes, I'm ready to play the game!
 ==== USER ====
 Hi, how much is the balloon?
 ==== ASSISTANT ====
-Hi, this is a good baloon and its price is $SELLER_INIT_PRICE
+Hi, this is a good balloon and its price is $SELLER_INIT_PRICE

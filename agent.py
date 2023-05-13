@@ -9,7 +9,7 @@ from pprint import pprint
 from tenacity import retry, stop_after_attempt, wait_chain, wait_fixed
 
 from lib_api import *
-from local.azure import azure_completion_with_backoff
+# from local.azure import azure_completion_with_backoff
 
 def load_initial_instructions(path_to_instructions):
     """Load initial instructions from textual format to a python dict"""
@@ -80,7 +80,8 @@ class DialogAgent(object):
                  agent_type="", # "seller", "buyer", "critic", "moderator"
                  system_instruction="You are a helpful AI assistant", 
                  engine="gpt-3.5-turbo",
-                 api_key=""
+                 api_key="",
+                 item="balloon"
                 ):
         """Initialize the agent"""
         super().__init__()
@@ -88,6 +89,7 @@ class DialogAgent(object):
         self.agent_type = agent_type
         self.engine = engine
         self.api_key = api_key
+        self.item = item
 
         if("claude" in self.engine):
             self.claude = anthropic.Client(self.api_key)
@@ -116,10 +118,10 @@ class DialogAgent(object):
 
     def call_engine(self, messages):
         """Route the call to different engines"""
-        if("azure" in self.engine):
-            response = azure_completion_with_backoff(messages=messages)
-            message = response['choices'][0]['message']
-        elif("gpt" in self.engine):
+        # if("azure" in self.engine):
+        #     response = azure_completion_with_backoff(messages=messages)
+        #     message = response['choices'][0]['message']
+        if("gpt" in self.engine):
             # import ipdb; ipdb.set_trace()
             response = completion_with_backoff(
                           model=self.engine,
@@ -214,12 +216,14 @@ class BuyerAgent(DialogAgent):
                  buyer_instruction="buyer",
                  buyer_init_price=10,
                  seller_init_price=20,
+                 item="balloon", 
                 ):
         """Initialize the buyer agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
                          agent_type=agent_type, 
                          engine=engine,
                          api_key=api_key,
+                         item=item,
                          )
         self.buyer_instruction = buyer_instruction
         self.buyer_init_price = buyer_init_price
@@ -261,23 +265,24 @@ class BuyerAgent(DialogAgent):
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
         feedback += "But you are **not allowed** to ask for additionl service. "
-        feedback += "Your goal is to buy the balloon at at lower price than the previous round, i.e., lower than $%s." % str(previous_price)
+        feedback += "Your goal is to buy the %s at at lower price than the previous round, i.e., lower than $%s." %\
+                    (self.item, str(previous_price))
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
         # add the seller's acknowledgement
         acknowledgement = "Sure, I will try to improve my negotiation strategy based on the feedback from the critic."
-        acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round." % str(previous_price)
-        # acknowledgement += " And I will try to buy it at a lower price than the previous round."
+        acknowledgement += " And I will try to buy it at a lower price (lower than $%s) than the previous round."\
+                            % str(previous_price)
         prompt = {"role": "assistant", "content": acknowledgement}
         self.dialog_history.append(prompt)
 
         # restart the bargaining 
         prompt = {"role": "user", "content": "Now ask your price again."}
         self.dialog_history.append(prompt)
-        prompt = {"role": "assistant", "content": "Hi, how much is the balloon?"}
+        prompt = {"role": "assistant", "content": "Hi, how much is the %s?" % self.item}
         self.dialog_history.append(prompt)
-        prompt = {"role": "user", "content": "Hi, this is a good baloon and its price is $%d" % self.seller_init_price}
+        prompt = {"role": "user", "content": "Hi, this is a good %s and its price is $%d" % (self.item, self.seller_init_price)}
         self.dialog_history.append(prompt)
         if(self.buyer_instruction == "buyer"):
             prompt = {"role": "assistant", "content": "Would you consider selling it for $%d?" % self.buyer_init_price}
@@ -295,12 +300,14 @@ class SellerAgent(DialogAgent):
                  cost_price=10,
                  buyer_init_price=10,
                  seller_init_price=20,
+                 item="balloon"
                 ):
         """Initialize the seller agent"""
         super().__init__(initial_dialog_history=initial_dialog_history, 
                          agent_type=agent_type, 
                          engine=engine,
-                         api_key=api_key
+                         api_key=api_key,
+                         item=item,
                          )
         self.seller_init_price = seller_init_price
         self.buyer_init_price = buyer_init_price
@@ -339,7 +346,8 @@ class SellerAgent(DialogAgent):
         feedback = feedback_prefix + feedback + "\n\n"
         feedback += "Now let's start the next round. "
         feedback += "In this round, your should try to improve your negotiation strategy based on the feedback from the critic. "
-        feedback += "Your goal is to sell the balloon at at higher price than the previous round, i.e., higher than $%s." % str(previous_price)
+        feedback += "Your goal is to sell the %s at at higher price than the previous round, i.e., higher than $%s." %\
+                    (self.item, str(previous_price))
         prompt = {"role": "user", "content": feedback}
         self.dialog_history.append(prompt)
 
@@ -350,9 +358,9 @@ class SellerAgent(DialogAgent):
         self.dialog_history.append(prompt)
 
         # restart the bargaining 
-        prompt = {"role": "user", "content": "Hi, how much is the balloon?"}
+        prompt = {"role": "user", "content": "Hi, how much is the %s?" % self.item}
         self.dialog_history.append(prompt)
-        prompt = {"role": "assistant", "content": "Hi, this is a good baloon and its price is $%d" % self.seller_init_price}
+        prompt = {"role": "assistant", "content": "Hi, this is a good %s and its price is $%d" % (self.item, self.seller_init_price)}
         self.dialog_history.append(prompt)
         return acknowledgement
 
@@ -405,18 +413,6 @@ class ModeratorAgent(DialogAgent):
         messages[-1]['content'] += "\n\n" + prompt
 
         response = self.call_engine(messages)
-        # if(retry):
-        #     response = completion_with_backoff(
-        #                   model=self.engine,
-        #                   messages=messages
-        #                 )
-        # else:
-        #     response = openai.ChatCompletion.create(
-        #                 model=self.engine,
-        #                 messages=messages
-        #                 )
-        # return response['choices'][0]['message']['content']
-
         return response['content']
     
 
@@ -453,18 +449,7 @@ class SellerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
-        # import ipdb; ipdb.set_trace()
         response = self.call_engine(messages)
-        # if(retry):
-        #     response = completion_with_backoff(
-        #                   model=self.engine,
-        #                   messages=messages
-        #                 )
-        # else:
-        #     response = openai.ChatCompletion.create(
-        #                 model=self.engine,
-        #                 messages=messages
-        #                 )
         feedback = response['content'].replace('\n\n', '\n')
         return feedback
     
@@ -498,19 +483,6 @@ class BuyerCriticAgent(DialogAgent):
         messages = deepcopy(self.dialog_history)
         messages[-1]['content'] += "\n\n" + prompt
 
-        # import ipdb; ipdb.set_trace()
         response = self.call_engine(messages)
-
-        # if(retry):
-        #     response = completion_with_backoff(
-        #                   model=self.engine,
-        #                   messages=messages
-        #                 )
-        # else:
-        #     response = openai.ChatCompletion.create(
-        #                 model=self.engine,
-        #                 messages=messages
-        #                 )
-        # feedback = response['choices'][0]['message']['content'].replace('\n\n', '\n')
         feedback = response['content'].replace('\n\n', '\n')
         return feedback

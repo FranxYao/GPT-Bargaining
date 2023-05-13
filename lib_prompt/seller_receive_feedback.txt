@@ -1,0 +1,16 @@
+==== USER ====
+Well done in your last round.
+Here is the feedback from the critic:
+
+SELLER_CRITIC_FEEDBACK
+
+Now let's start the next round. 
+In this round, your should try to improve your negotiation strategy based on the feedback from the critic. 
+Your goal is to sell the ITEM_NAME at at higher price than the previous round, i.e., higher than $PREVIOUS_PRICE.
+==== ASSISTANT ====
+Sure, I will try to improve my negotiation strategy based on the feedback from the critic.
+And I will try to sell it at a higher price (higher than $PREVIOUS_PRICE) than the previous round.
+==== USER ====
+Hi, how much is the %s?
+==== ASSISTANT ====
+Hi, this is a good ITEM_NAME and its price is $SELLER_INIT_PRICE

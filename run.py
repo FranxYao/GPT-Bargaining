@@ -255,7 +255,10 @@ def run_compare_critic(args, buyer, seller, moderator, critic,
                                             game_type=game_type, 
                                             n_round=n_round, who_is_first=who_is_first)
         
-        if(check_k_price_range(ai_price) and check_k_price_range(const_price) and check_k_price_range(human_price)):
+        if(check_k_price_range(ai_price, p_min=args.buyer_init_price, p_max=args.seller_init_price) and 
+           check_k_price_range(const_price, p_min=args.buyer_init_price, p_max=args.seller_init_price) and 
+           check_k_price_range(human_price, p_min=args.buyer_init_price, p_max=args.seller_init_price)
+           ):
             prices_ai_critic.append(ai_price)
             prices_const_critic.append(const_price)
             prices_human_critic.append(human_price)
@@ -297,7 +300,7 @@ def run_simple(args, buyer, seller, moderator,
         logger.write("\n\n\n\n")
     return 
 
-def run_w_critic_rollout(buyer, seller, moderator, critic, game_type, 
+def run_w_critic_rollout(args, buyer, seller, moderator, critic, game_type, 
                             n_rollout=3,
                             n_round=10, who_is_first="seller"):
     """Run multiple rounds of bargaining with one single critic
@@ -337,7 +340,9 @@ def run_w_critic_rollout(buyer, seller, moderator, critic, game_type,
         run_i_price = run(buyer, seller, moderator, n_round=n_round, who_is_first=who_is_first)
         logger.write('PRICE: %s' % run_i_price)
 
-        if(check_price_range(run_i_price) == False):
+        if(check_price_range(
+            run_i_price, p_min=args.buyer_init_price, p_max=args.seller_init_price) == False
+            ):
             logger.write("run %d did not get a deal, stop unroll" % (i + 2))
             break
 
@@ -358,7 +363,7 @@ def run_with_critic(args, buyer, seller, moderator, critic, game_type,
         buyer.reset()
         seller.reset()
         moderator.reset()
-        round_prices = run_w_critic_rollout(buyer, seller, moderator, critic, game_type, 
+        round_prices = run_w_critic_rollout(args, buyer, seller, moderator, critic, game_type, 
                                             n_rollout=n_rollout,
                                             n_round=n_round, who_is_first=who_is_first)
         # if(len(round_prices) == 5):

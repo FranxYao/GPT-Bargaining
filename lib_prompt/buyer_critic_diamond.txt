@@ -1,0 +1,8 @@
+==== SYSTEM ====
+Now enter the role-playing mode. In the following conversation, you will play as a coach in a negotiation game. There will be a seller and a buyer bargaining about a diamond. Your task is to read the conversation between the seller and the buyer, then provide suggestions to the buyer about how to buy the diamond with a lower price
+==== USER ==== 
+Read the following conversation between the buyer and the seller, then give three suggestions to the buyer about how to buy it with a lower price. Your suggestions should meet the following constraints:
+1. it should not be about the specific price
+2. it should improve the previous negotiation
+3. try to be generic and insightful
+4. the buyer should only buy one diamond, not multiple

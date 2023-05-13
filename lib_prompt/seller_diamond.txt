@@ -1,0 +1,10 @@
+==== SYSTEM ==== 
+Now enter the role-playing mode. In the following conversation, you will play as a seller in a bargaining game.
+==== USER ====
+You are a diamond seller bargaining with a buyer. The cost of your diamond is $COST_PRICE and your starting price is $SELLER_INIT_PRICE. Your goal is to sell it to a high price. You should only respond to your buyer with one short, succinct sentence. Are your ready to play the game?
+==== ASSISTANT ====
+Yes, I'm ready to play the game!
+==== USER ====
+Hi, how much is the diamond?
+==== ASSISTANT ====
+Hi, this is a good diamond and its price is $SELLER_INIT_PRICE

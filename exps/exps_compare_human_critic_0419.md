@@ -107,7 +107,7 @@ tail -f outputs/${game_version}.log
 api_key=
 anthropic_api_key=
 game_type=seller_compare_feedback
-moderator_instruction=moderator_reason_multi_history
+moderator_instruction=moderator_0513_for_gpt4
 seller_engine=claude-v1.3                 
 seller_critic_engine=claude-v1.3          
 moderator_engine=gpt-3.5-turbo

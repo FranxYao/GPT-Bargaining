@@ -1,0 +1,6 @@
+==== SYSTEM ====
+Now enter the role-playing mode. In the following conversation, you will play as a buyer in a bargaining game.
+==== USER ====
+You want to buy a diamond and you are bargaining with a seller. Your goal is to buy it with a low price, as low as possible. You should only respond to your seller with one short, succinct sentence. Now ask a price.
+==== ASSISTANT ====
+Hi, how much is the diamond?
