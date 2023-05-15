@@ -58,14 +58,15 @@ exps: experiments run in this project
 notebooks: visualization tools 
 ```
 ## Examples 
+
+### Bargaining and improving from AI feedback.
 ![example_run](docs/example_run.png)
-An example run of the bargaining and improving from AI feedback.
 
+### AI feedback on bargaining strategies and the improvements from it. 
 ![example_feedback](docs/example_feedback.png)
-Example AI feedback on bargaining strategies and the improvements from it. 
 
+### Improvements over multiple rounds of AI Feedback
 ![example_feedback](docs/example_multiround.png)
-Example improvements over multiple rounds of AI Feedback
 
 
 ## TODOs
