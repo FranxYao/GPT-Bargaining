@@ -6,6 +6,9 @@ Implmentation of paper: _Improving Language Model Negotiation with Self-Play and
 
 Yao Fu. University of Edinburgh 
 
+Paper with be released soon 
+
+
 > We study whether multiple large language models (LLMs) can autonomously improve each other in a negotiation game by playing, reflecting, and criticizing. We ask two large language models to negotiate with each other,
 playing the roles of a buyer and a seller, respectively. They aim to reach a deal with
 the buyer targeting a lower price and the seller a higher one. A third language model,
