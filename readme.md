@@ -65,7 +65,7 @@ notebooks: visualization tools
 ### Bargaining and improving from AI feedback.
 ![example_run](docs/example_run.png)
 
-### AI feedback on bargaining strategies and the improvements from it. 
+### AI feedback about bargaining strategies
 ![example_feedback](docs/example_feedback.png)
 
 ### Improvements over multiple rounds of AI Feedback
