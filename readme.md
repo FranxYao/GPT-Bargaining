@@ -17,6 +17,8 @@ strategies. We let the two agents play multiple rounds, using previous negotiati
 history and the AI feedback as in-context demonstrations to improve the model’s
 negotiation performance iteratively. 
 
+> We believe our results have profound implications for AI research: on the positive side, it indicates the possibility of continuously improving language models with minimal human intervention. On the risky side, it might be more challenging to oversight the model behavior in our framework because models are acting autonomously, which calls for future alignment and safety research in the multi-agent game setting.
+
 ## Quickstart
 
 ```bash
