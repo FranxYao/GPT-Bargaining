@@ -1,12 +1,10 @@
-# GPT-Bargaining: Improving Language Model Negociation with Self-Play and In-Context Learning from AI Feedback 
+# GPT-Bargaining: Improving Language Model Negotiation with Self-Play and In-Context Learning from AI Feedback 
 
 ![title](docs/title.png)
 
-Implmentation of paper: _Improving Language Model Negotiation with Self-Play and In-Context Learning from AI Feedback_. 2023
+Implmentation of paper: _Improving Language Model Negotiation with Self-Play and In-Context Learning from AI Feedback_. [[Arxiv](https://arxiv.org/abs/2305.10142)] 2023. 
 
 Yao Fu. University of Edinburgh 
-
-[Paper pdf](docs/GPTBargaining_pub_v0.1.pdf)
 
 
 > We study whether multiple large language models (LLMs) can autonomously improve each other in a negotiation game by playing, reflecting, and criticizing. We ask two large language models to negotiate with each other,
